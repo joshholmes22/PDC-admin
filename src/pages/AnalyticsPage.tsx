@@ -98,7 +98,6 @@ export function AnalyticsPage() {
       icon: Users,
       color: "text-[hsl(var(--pdc-navy))]",
       bgColor: "bg-blue-50 dark:bg-blue-950/20",
-      bgColor: "bg-blue-50 dark:bg-blue-950/20",
       subtitle: `${avgDailyActiveUsers} avg daily active users`,
     },
     {
@@ -106,7 +105,6 @@ export function AnalyticsPage() {
       value: activeUsers30d.toLocaleString(),
       icon: TrendingUp,
       color: "text-[hsl(var(--pdc-gold))]",
-      bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
       bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
       subtitle: `${((activeUsers30d / Math.max(totalUsers, 1)) * 100).toFixed(
         1
@@ -118,7 +116,6 @@ export function AnalyticsPage() {
       icon: Eye,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
-      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
       subtitle: `${totalVideos} educational videos available`,
     },
     {
@@ -126,7 +123,6 @@ export function AnalyticsPage() {
       value: `${Math.round(totalPracticeMinutes / 60)}h`,
       icon: Clock,
       color: "text-[hsl(var(--pdc-slate))]",
-      bgColor: "bg-slate-50 dark:bg-slate-950/20",
       bgColor: "bg-slate-50 dark:bg-slate-950/20",
       subtitle: `${totalPracticeSessions} total practice sessions`,
     },
@@ -136,7 +132,6 @@ export function AnalyticsPage() {
       icon: Target,
       color: "text-amber-600",
       bgColor: "bg-amber-50 dark:bg-amber-950/20",
-      bgColor: "bg-amber-50 dark:bg-amber-950/20",
       subtitle: `${avgSessionDuration.toFixed(1)} min avg session`,
     },
     {
@@ -144,7 +139,6 @@ export function AnalyticsPage() {
       value: totalEngagements.toLocaleString(),
       icon: Award,
       color: "text-[hsl(var(--pdc-gold-dark))]",
-      bgColor: "bg-orange-50 dark:bg-orange-950/20",
       bgColor: "bg-orange-50 dark:bg-orange-950/20",
       subtitle: "All user activities combined",
     },
