@@ -16,7 +16,18 @@ function processDailyMetrics(events: any[], days: number): DailyMetrics[] {
       return eventDate === dateStr;
     });
 
-    // Count unique users for DAU - be inclusive for grant metrics
+    // Count unique users for DAU - now track both methods
+    // Method 1: PostHog-style DAU (App_Opened only)
+    const appOpenEvents = dayEvents.filter(
+      (event) => event.event_name === "App_Opened"
+    );
+    const coreDAU = new Set(
+      appOpenEvents
+        .map((event) => event.user_id)
+        .filter((userId): userId is string => Boolean(userId))
+    );
+
+    // Method 2: Engagement DAU (all activities)
     const dauEvents = dayEvents.filter((event) =>
       // Include ALL user activity that shows engagement
       [
@@ -36,7 +47,12 @@ function processDailyMetrics(events: any[], days: number): DailyMetrics[] {
         "Anonymous_Video_Watched",
       ].includes(event.event_name)
     );
-    const uniqueUsers = new Set(dauEvents.map((event) => event.user_id));
+
+    const engagementDAU = new Set(
+      dauEvents
+        .map((event) => event.user_id)
+        .filter((userId): userId is string => Boolean(userId))
+    );
 
     // Count event types
     const eventCounts = dayEvents.reduce(
@@ -49,7 +65,8 @@ function processDailyMetrics(events: any[], days: number): DailyMetrics[] {
 
     const dayMetrics = {
       date: dateStr,
-      active_users: uniqueUsers.size,
+      core_dau: coreDAU.size, // PostHog-style DAU (App_Opened only)
+      active_users: engagementDAU.size, // All engagement DAU
       sessions: eventCounts["App_Opened"] || 0,
       video_views: eventCounts["Video_Viewed"] || 0,
       practice_sessions: eventCounts["Practice_Session_Added"] || 0,
@@ -64,7 +81,8 @@ function processDailyMetrics(events: any[], days: number): DailyMetrics[] {
 // Types for analytics data
 export interface DailyMetrics {
   date: string;
-  active_users: number;
+  core_dau: number; // PostHog-style DAU (App_Opened only)
+  active_users: number; // All engagement DAU
   sessions: number;
   video_views: number;
   practice_sessions: number;

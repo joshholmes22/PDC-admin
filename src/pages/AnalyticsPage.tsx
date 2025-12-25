@@ -18,6 +18,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -76,13 +77,25 @@ export function AnalyticsPage() {
 
   // Grant-worthy engagement metrics
   const dailyMetricsLast7 = dailyMetrics.slice(-7);
-  const avgDailyActiveUsers =
+  
+  // Core DAU (PostHog-style: App_Opened only)
+  const avgCoreDailyActiveUsers =
+    dailyMetricsLast7.length > 0
+      ? Math.round(
+          dailyMetricsLast7.reduce((sum, day) => sum + day.core_dau, 0) /
+            dailyMetricsLast7.length
+        )
+      : 0;
+  
+  // Engagement DAU (All activities)
+  const avgEngagementDailyActiveUsers =
     dailyMetricsLast7.length > 0
       ? Math.round(
           dailyMetricsLast7.reduce((sum, day) => sum + day.active_users, 0) /
             dailyMetricsLast7.length
         )
       : 0;
+  
   const totalEngagements = dailyMetrics.reduce(
     (sum, day) =>
       sum + day.active_users + day.video_views + day.practice_sessions,
@@ -93,29 +106,35 @@ export function AnalyticsPage() {
 
   const statCards = [
     {
-      title: "Total User Base",
-      value: totalUsers.toLocaleString(),
+      title: "Core Daily Active Users",
+      value: avgCoreDailyActiveUsers.toString(),
       icon: Users,
-      color: "text-[hsl(var(--pdc-navy))]",
+      color: "text-[hsl(var(--pdc-navy))]", 
       bgColor: "bg-blue-50 dark:bg-blue-950/20",
-      subtitle: `${avgDailyActiveUsers} avg daily active users`,
+      subtitle: `PostHog-style DAU (app opens only)`,
     },
     {
-      title: "Monthly Active Users",
-      value: activeUsers30d.toLocaleString(),
+      title: "Engagement Active Users",
+      value: avgEngagementDailyActiveUsers.toString(),
       icon: TrendingUp,
       color: "text-[hsl(var(--pdc-gold))]",
       bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
-      subtitle: `${((activeUsers30d / Math.max(totalUsers, 1)) * 100).toFixed(
-        1
-      )}% engagement rate`,
+      subtitle: `All user activities (videos, practice, etc.)`,
+    },
+    {
+      title: "Total User Base",
+      value: totalUsers.toLocaleString(),
+      icon: Users,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
+      subtitle: `${activeUsers30d} monthly active users`,
     },
     {
       title: "Video Engagements",
       value: totalViews.toLocaleString(),
       icon: Eye,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
+      color: "text-purple-600",
+      bgColor: "bg-purple-50 dark:bg-purple-950/20",
       subtitle: `${totalVideos} educational videos available`,
     },
     {
@@ -244,11 +263,12 @@ export function AnalyticsPage() {
                     stroke="hsl(var(--pdc-slate))"
                   />
                   <YAxis stroke="hsl(var(--pdc-slate))" />
+                  <Legend />
                   <Tooltip
                     labelFormatter={(value) =>
                       new Date(value).toLocaleDateString()
                     }
-                    formatter={(value) => [value, "Active Users"]}
+                    formatter={(value, name) => [value, name]}
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
@@ -257,11 +277,21 @@ export function AnalyticsPage() {
                   />
                   <Line
                     type="monotone"
+                    dataKey="core_dau"
+                    stroke="hsl(var(--pdc-navy))"
+                    strokeWidth={3}
+                    dot={{ fill: "hsl(var(--pdc-navy))", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: "hsl(var(--pdc-navy))" }}
+                    name="Core DAU (App Opens)"
+                  />
+                  <Line
+                    type="monotone"
                     dataKey="active_users"
                     stroke="hsl(var(--pdc-gold))"
                     strokeWidth={3}
                     dot={{ fill: "hsl(var(--pdc-gold))", strokeWidth: 2, r: 4 }}
                     activeDot={{ r: 6, fill: "hsl(var(--pdc-gold-dark))" }}
+                    name="Engagement DAU"
                   />
                 </LineChart>
               </ResponsiveContainer>
