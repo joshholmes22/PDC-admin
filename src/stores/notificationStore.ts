@@ -52,9 +52,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("scheduled_notifications")
+        .from("NotificationLog")
         .select("*")
-        .order("scheduled_for", { ascending: false });
+        .order("sentAt", { ascending: false });
 
       if (error) throw error;
       set({ notifications: data || [] });

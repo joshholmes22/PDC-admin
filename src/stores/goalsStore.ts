@@ -29,9 +29,17 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("goals")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from("Goal")
+        .select(`
+          id,
+          userid,
+          targetminutes,
+          practicedays,
+          reminder,
+          createdat,
+          remindertime
+        `)
+        .order("createdat", { ascending: false });
 
       if (error) throw error;
       set({ goals: data || [] });
@@ -48,7 +56,7 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("goals")
+        .from("Goal")
         .insert(input as never)
         .select()
         .single();
@@ -71,7 +79,7 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("goals")
+        .from("Goal")
         .update(input as never)
         .eq("id", id)
         .select()
@@ -96,7 +104,7 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
   deleteGoal: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase.from("goals").delete().eq("id", id);
+      const { error } = await supabase.from("Goal").delete().eq("id", id);
 
       if (error) throw error;
 

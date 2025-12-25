@@ -65,7 +65,7 @@ export const useBookingsStore = create<BookingsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("drum_zone_sites")
+        .from("DrumZoneSite")
         .select("*")
         .order("name", { ascending: true });
 
@@ -259,20 +259,20 @@ export const useBookingsStore = create<BookingsState>((set, get) => ({
 
     try {
       let query = supabase
-        .from("drum_zone_bookings")
+        .from("Booking")
         .select("*")
-        .order("start_time", { ascending: true });
+        .order("startTime", { ascending: true });
 
       if (roomId) {
         query = query.eq("room_id", roomId);
       }
 
       if (startDate) {
-        query = query.gte("start_time", startDate);
+        query = query.gte("startTime", startDate);
       }
 
       if (endDate) {
-        query = query.lte("end_time", endDate);
+        query = query.lte("endTime", endDate);
       }
 
       const { data, error } = await query;

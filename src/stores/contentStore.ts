@@ -62,9 +62,9 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("videos")
+        .from("Video")
         .select("*")
-        .order("display_order", { ascending: true });
+        .order("createdAt", { ascending: false });
 
       if (error) throw error;
       set({ videos: data || [] });
@@ -82,7 +82,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("videos")
+        .from("Video")
         .insert(input as never)
         .select()
         .single();
@@ -105,7 +105,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("videos")
+        .from("Video")
         .update(input as never)
         .eq("id", id)
         .select()
@@ -130,7 +130,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
   deleteVideo: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase.from("videos").delete().eq("id", id);
+      const { error } = await supabase.from("Video").delete().eq("id", id);
 
       if (error) throw error;
 
@@ -151,9 +151,9 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("video_series")
+        .from("VideoSeries")
         .select("*")
-        .order("display_order", { ascending: true });
+        .order("createdAt", { ascending: false });
 
       if (error) throw error;
       set({ series: data || [] });
@@ -171,7 +171,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("video_series")
+        .from("VideoSeries")
         .insert(input as never)
         .select()
         .single();
@@ -194,7 +194,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("video_series")
+        .from("VideoSeries")
         .update(input as never)
         .eq("id", id)
         .select()
@@ -222,7 +222,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { error } = await supabase
-        .from("video_series")
+        .from("VideoSeries")
         .delete()
         .eq("id", id);
 
@@ -245,7 +245,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("artists")
+        .from("Artist")
         .select("*")
         .order("name", { ascending: true });
 
@@ -265,7 +265,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("artists")
+        .from("Artist")
         .insert(input as never)
         .select()
         .single();
@@ -288,7 +288,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("artists")
+        .from("Artist")
         .update(input as never)
         .eq("id", id)
         .select()
@@ -313,7 +313,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
   deleteArtist: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase.from("artists").delete().eq("id", id);
+      const { error } = await supabase.from("Artist").delete().eq("id", id);
 
       if (error) throw error;
 

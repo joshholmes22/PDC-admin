@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Target,
-  Plus,
-  Trophy,
   Calendar,
-  Edit,
   Trash2,
-  Star,
+  Bell,
+  Clock,
 } from "lucide-react";
 import { useGoalsStore } from "@/stores";
 import {
@@ -41,8 +38,9 @@ export function GoalsPage() {
     return <LoadingState message="Loading goals..." />;
   }
 
-  const activeGoals = goals.filter((g) => g.is_active);
-  const featuredGoals = goals.filter((g) => g.is_featured);
+  // Calculate stats from actual production data (user practice goals)
+  const activeGoals = goals.filter((g) => (g as any).reminder === true);
+  const completedGoals = goals.filter((g) => (g as any).reminder === false);
 
   return (
     <div className="space-y-6">
@@ -51,18 +49,12 @@ export function GoalsPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Target className="h-8 w-8" />
-            Goals & Challenges
+            User Practice Goals
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage goals and challenges for user motivation.
+            View and manage user practice goals and targets.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/goals/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Goal
-          </Link>
-        </Button>
       </div>
 
       {error && <Alert variant="destructive">{error}</Alert>}
@@ -82,7 +74,7 @@ export function GoalsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Goals
+              With Reminders
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -94,12 +86,12 @@ export function GoalsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Featured Goals
+              Without Reminders
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-500">
-              {featuredGoals.length}
+              {completedGoals.length}
             </div>
           </CardContent>
         </Card>
@@ -116,16 +108,13 @@ export function GoalsPage() {
           </Card>
         ) : (
           goals.map((goal) => (
-            <Card key={goal.id} className={!goal.is_active ? "opacity-60" : ""}>
+            <Card key={goal.id} className={!(goal as any).reminder ? "opacity-60" : ""}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{goal.title}</CardTitle>
+                  <CardTitle className="text-lg">
+                    User Practice Goal
+                  </CardTitle>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/goals/${goal.id}/edit`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -138,43 +127,42 @@ export function GoalsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {goal.description}
+                <p className="text-sm text-muted-foreground">
+                  User ID: {(goal as any).userid}
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant={goal.is_featured ? "default" : "secondary"}>
-                    {goal.is_featured ? (
-                      <Star className="h-3 w-3 mr-1" />
+                  <Badge variant={(goal as any).reminder ? "default" : "secondary"}>
+                    {(goal as any).reminder ? (
+                      <Bell className="h-3 w-3 mr-1" />
                     ) : (
                       <Target className="h-3 w-3 mr-1" />
                     )}
-                    {goal.goal_type.replace("_", " ")}
-                  </Badge>
-
-                  <Badge variant={goal.is_active ? "success" : "outline"}>
-                    {goal.is_active ? "Active" : "Inactive"}
+                    {(goal as any).reminder ? "Reminders On" : "No Reminders"}
                   </Badge>
                 </div>
 
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Target className="h-3 w-3" />
-                    Target: {goal.target_value} {goal.target_unit || "units"}
+                    Target: {(goal as any).targetminutes} minutes
                   </div>
-                  {goal.start_date && (
+                  {(goal as any).practicedays && (goal as any).practicedays.length > 0 && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="h-3 w-3" />
-                      {formatDate(goal.start_date)}
-                      {goal.end_date && ` - ${formatDate(goal.end_date)}`}
+                      Practice Days: {(goal as any).practicedays.join(", ")}
                     </div>
                   )}
-                  {goal.is_featured && (
-                    <div className="flex items-center gap-2 text-orange-500">
-                      <Trophy className="h-3 w-3" />
-                      Featured Goal
+                  {(goal as any).remindertime && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      Reminder Time: {(goal as any).remindertime}
                     </div>
                   )}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    Created: {formatDate((goal as any).createdat)}
+                  </div>
                 </div>
               </CardContent>
             </Card>

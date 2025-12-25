@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   BarChart3,
   Users,
-  Video,
   Clock,
   TrendingUp,
-  Calendar,
   Eye,
+  Target,
+  Award,
+  PlayCircle,
 } from "lucide-react";
 import {
   LineChart,
@@ -18,9 +19,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import {
   Card,
@@ -28,225 +26,211 @@ import {
   CardTitle,
   CardContent,
   LoadingState,
+  Button,
+  Badge,
 } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
-import { formatDate } from "@/lib/utils";
-
-interface AnalyticsData {
-  dailyActiveUsers: Array<{ date: string; count: number }>;
-  videoViews: Array<{ video_title: string; views: number }>;
-  usersByDifficulty: Array<{ difficulty: string; count: number }>;
-  totalStats: {
-    totalUsers: number;
-    totalVideos: number;
-    totalViews: number;
-    totalPracticeMinutes: number;
-  };
-}
-
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+import { useAnalyticsStore } from "@/stores/analyticsStore";
+import { formatDuration } from "@/lib/utils";
 
 export function AnalyticsPage() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
+  const {
+    dailyMetrics,
+    topVideos,
+    userEngagement,
+    practiceMetrics,
+    isLoading,
+    error,
+    dateRange,
+    setDateRange,
+    fetchAllAnalytics,
+  } = useAnalyticsStore();
 
   useEffect(() => {
-    async function fetchAnalytics() {
-      setIsLoading(true);
-      try {
-        const daysAgo = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - daysAgo);
-
-        // Fetch all stats in parallel
-        const [usersRes, videosRes, viewsRes, practiceRes] = await Promise.all([
-          supabase.from("AppUser").select("id", { count: "exact", head: true }),
-          supabase.from("videos").select("id", { count: "exact", head: true }),
-          supabase
-            .from("video_views")
-            .select("id", { count: "exact", head: true }),
-          supabase.from("practice_logs").select("duration_minutes"),
-        ]);
-
-        const totalPracticeMinutes =
-          (practiceRes.data as { duration_minutes: number }[] | null)?.reduce(
-            (acc: number, log: { duration_minutes: number }) =>
-              acc + (log.duration_minutes || 0),
-            0
-          ) || 0;
-
-        // Fetch video performance (top 5 videos by views)
-        const { data: topVideos } = await supabase
-          .from("videos")
-          .select("title, view_count")
-          .order("view_count", { ascending: false })
-          .limit(5);
-
-        // Simulate daily active users data (would come from a real view/table)
-        const dailyActiveUsers = Array.from({ length: daysAgo }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (daysAgo - i - 1));
-          return {
-            date: formatDate(date.toISOString()),
-            count: Math.floor(Math.random() * 100) + 20, // Placeholder data
-          };
-        });
-
-        // Simulate difficulty distribution
-        const usersByDifficulty = [
-          { difficulty: "Beginner", count: 45 },
-          { difficulty: "Intermediate", count: 35 },
-          { difficulty: "Advanced", count: 20 },
-        ];
-
-        setData({
-          dailyActiveUsers,
-          videoViews:
-            (topVideos as { title: string; view_count: number }[] | null)?.map(
-              (v) => ({
-                video_title:
-                  v.title.slice(0, 20) + (v.title.length > 20 ? "..." : ""),
-                views: v.view_count || 0,
-              })
-            ) || [],
-          usersByDifficulty,
-          totalStats: {
-            totalUsers: usersRes.count || 0,
-            totalVideos: videosRes.count || 0,
-            totalViews: viewsRes.count || 0,
-            totalPracticeMinutes,
-          },
-        });
-      } catch (error) {
-        console.error("Failed to fetch analytics:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchAnalytics();
-  }, [dateRange]);
+    fetchAllAnalytics();
+  }, [fetchAllAnalytics]);
 
   if (isLoading) {
     return <LoadingState message="Loading analytics..." />;
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="text-red-500 mb-4">Failed to load analytics</div>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={fetchAllAnalytics}>Retry</Button>
+      </div>
+    );
+  }
+
+  // Calculate summary stats - optimized for grant applications
+  const totalUsers = userEngagement?.total_users || 0;
+  const activeUsers7d = userEngagement?.active_users_7d || 0;
+  const activeUsers30d = userEngagement?.active_users_30d || 0;
+  const totalVideos = topVideos.length;
+  const totalViews = topVideos.reduce((sum, video) => sum + video.views, 0);
+  const totalPracticeMinutes = practiceMetrics?.total_practice_minutes || 0;
+  const practiceSessionsThisWeek = practiceMetrics?.practice_sessions_this_week || 0;
+  const totalPracticeSessions = practiceMetrics?.total_practice_sessions || 0;
+  
+  // Grant-worthy engagement metrics
+  const dailyMetricsLast7 = dailyMetrics.slice(-7);
+  const avgDailyActiveUsers = dailyMetricsLast7.length > 0 
+    ? Math.round(dailyMetricsLast7.reduce((sum, day) => sum + day.active_users, 0) / dailyMetricsLast7.length)
+    : 0;
+  const totalEngagements = dailyMetrics.reduce((sum, day) => 
+    sum + day.active_users + day.video_views + day.practice_sessions, 0);
+  const avgSessionDuration = userEngagement?.avg_session_duration || 0;
+  const retentionRate = userEngagement?.retention_rate_7d || 0;
+
   const statCards = [
     {
-      title: "Total Users",
-      value: data?.totalStats.totalUsers || 0,
+      title: "Total User Base",
+      value: totalUsers.toLocaleString(),
       icon: Users,
-      color: "text-blue-500",
+      color: "text-[hsl(var(--pdc-navy))]",
+      bgColor: "bg-blue-50 dark:bg-blue-950/20",
+      bgColor: "bg-blue-50 dark:bg-blue-950/20",
+      subtitle: `${avgDailyActiveUsers} avg daily active users`,
     },
     {
-      title: "Total Videos",
-      value: data?.totalStats.totalVideos || 0,
-      icon: Video,
-      color: "text-purple-500",
+      title: "Monthly Active Users",
+      value: activeUsers30d.toLocaleString(),
+      icon: TrendingUp,
+      color: "text-[hsl(var(--pdc-gold))]",
+      bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
+      bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
+      subtitle: `${((activeUsers30d / Math.max(totalUsers, 1)) * 100).toFixed(1)}% engagement rate`,
     },
     {
-      title: "Total Views",
-      value: data?.totalStats.totalViews || 0,
+      title: "Video Engagements",
+      value: totalViews.toLocaleString(),
       icon: Eye,
-      color: "text-green-500",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
+      subtitle: `${totalVideos} educational videos available`,
     },
     {
-      title: "Practice Time",
-      value: `${Math.floor(
-        (data?.totalStats.totalPracticeMinutes || 0) / 60
-      )}h`,
+      title: "Practice Hours Logged",
+      value: `${Math.round(totalPracticeMinutes / 60)}h`,
       icon: Clock,
-      color: "text-orange-500",
+      color: "text-[hsl(var(--pdc-slate))]",
+      bgColor: "bg-slate-50 dark:bg-slate-950/20",
+      bgColor: "bg-slate-50 dark:bg-slate-950/20",
+      subtitle: `${totalPracticeSessions} total practice sessions`,
+    },
+    {
+      title: "User Retention",
+      value: `${(retentionRate * 100).toFixed(1)}%`,
+      icon: Target,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50 dark:bg-amber-950/20",
+      bgColor: "bg-amber-50 dark:bg-amber-950/20",
+      subtitle: `${avgSessionDuration.toFixed(1)} min avg session`,
+    },
+    {
+      title: "Total Interactions",
+      value: totalEngagements.toLocaleString(),
+      icon: Award,
+      color: "text-[hsl(var(--pdc-gold-dark))]",
+      bgColor: "bg-orange-50 dark:bg-orange-950/20",
+      bgColor: "bg-orange-50 dark:bg-orange-950/20",
+      subtitle: "All user activities combined",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-8 w-8" />
-            Analytics
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-[hsl(var(--pdc-navy))] flex items-center gap-3">
+            Internal Analytics 
+            <span className="text-[hsl(var(--pdc-gold))]" role="img" aria-label="target">🎯</span>
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Track user engagement and content performance.
+          <p className="text-[hsl(var(--pdc-slate))] text-lg">
+            Real-time insights from your internal data - no third parties needed!
           </p>
         </div>
-        <div className="flex items-center gap-2 border rounded-md p-1">
-          {(["7d", "30d", "90d"] as const).map((range) => (
-            <button
+        <div className="flex gap-2">
+          {["7d", "30d", "90d"].map((range) => (
+            <Button
               key={range}
-              onClick={() => setDateRange(range)}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                dateRange === range
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
+              variant={dateRange === range ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateRange(range as "7d" | "30d" | "90d")}
             >
-              {range === "7d"
-                ? "7 Days"
-                : range === "30d"
-                ? "30 Days"
-                : "90 Days"}
-            </button>
+              {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
+            </Button>
           ))}
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {typeof stat.value === "number"
-                  ? stat.value.toLocaleString()
-                  : stat.value}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Stats Overview */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {statCards.map((stat, index) => {
+          const IconComponent = stat.icon;
+          return (
+            <Card key={index} className="border-l-4 border-l-[hsl(var(--pdc-gold))] hover:shadow-lg transition-all duration-200 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-[hsl(var(--pdc-navy))] dark:text-white">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor || 'bg-gray-50'}`}>
+                  <IconComponent className={`h-5 w-5 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-3xl font-bold text-[hsl(var(--pdc-navy))] dark:text-white">
+                  {stat.value}
+                </div>
+                <p className="text-sm text-[hsl(var(--pdc-slate))] leading-tight">
+                  {stat.subtitle}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Daily Active Users Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Daily Active Users
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Daily Active Users */}
+        <Card className="border-t-4 border-t-[hsl(var(--pdc-navy))] bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-[hsl(var(--pdc-navy))] dark:text-white">
+              <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-[hsl(var(--pdc-navy))]" />
+              </div>
+              Daily Active Users & Engagement
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data?.dailyActiveUsers || []}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-muted"
+                <LineChart data={dailyMetrics}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--pdc-slate))" opacity={0.3} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    stroke="hsl(var(--pdc-slate))"
                   />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => value.split(",")[0]}
+                  <YAxis stroke="hsl(var(--pdc-slate))" />
+                  <Tooltip 
+                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                    formatter={(value) => [value, 'Active Users']}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
                   />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="count"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={false}
+                  <Line 
+                    type="monotone" 
+                    dataKey="active_users" 
+                    stroke="hsl(var(--pdc-gold))" 
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(var(--pdc-gold))', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: 'hsl(var(--pdc-gold-dark))' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -254,116 +238,187 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Top Videos Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="h-5 w-5" />
-              Top Videos by Views
+        {/* Top Videos */}
+        <Card className="border-t-4 border-t-[hsl(var(--pdc-gold))] bg-gradient-to-br from-white to-yellow-50/30 dark:from-gray-900 dark:to-yellow-950/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-[hsl(var(--pdc-navy))] dark:text-white">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+                <PlayCircle className="h-5 w-5 text-emerald-600" />
+              </div>
+              Top Performing Videos
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data?.videoViews || []} layout="vertical">
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-muted"
+                <BarChart data={topVideos.slice(0, 5)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--pdc-slate))" opacity={0.3} />
+                  <XAxis 
+                    dataKey="title" 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--pdc-slate))' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    interval={0}
+                    tickFormatter={(value) => value.length > 10 ? value.slice(0, 10) + '...' : value}
                   />
-                  <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis
-                    dataKey="video_title"
-                    type="category"
-                    tick={{ fontSize: 11 }}
-                    width={100}
+                  <YAxis stroke="hsl(var(--pdc-slate))" />
+                  <Tooltip 
+                    formatter={(value) => {
+                      const video = topVideos.find(v => v.title === value);
+                      return [
+                        `${value} views`,
+                        video ? `${video.completion_rate?.toFixed(1)}% completion` : '',
+                        video ? `${video.abandonment_rate?.toFixed(1)}% abandonment` : ''
+                      ];
+                    }}
+                    labelFormatter={(value) => value}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
                   />
-                  <Tooltip />
-                  <Bar dataKey="views" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                  <Bar 
+                    dataKey="views" 
+                    fill="hsl(var(--pdc-gold))"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* User Difficulty Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Users by Skill Level
+        {/* Practice Metrics */}
+        <Card className="border-t-4 border-t-[hsl(var(--pdc-slate))] bg-gradient-to-br from-white to-slate-50/30 dark:from-gray-900 dark:to-slate-950/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-[hsl(var(--pdc-navy))] dark:text-white">
+              <div className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                <Award className="h-5 w-5 text-purple-600" />
+              </div>
+              Practice Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-[hsl(var(--pdc-slate))]">
+                  Avg Session Duration:
+                </span>
+                <Badge variant="outline" className="border-[hsl(var(--pdc-gold))] text-[hsl(var(--pdc-gold-dark))]">
+                  {formatDuration((practiceMetrics?.avg_practice_session_duration || 0) * 60)}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-[hsl(var(--pdc-slate))]">
+                  Sessions Today:
+                </span>
+                <Badge className="bg-[hsl(var(--pdc-gold))] text-[hsl(var(--pdc-navy))]">
+                  {practiceMetrics?.practice_sessions_today || 0}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-[hsl(var(--pdc-slate))]">
+                  Sessions This Week:
+                </span>
+                <Badge className="bg-[hsl(var(--pdc-navy))] text-white">
+                  {practiceMetrics?.practice_sessions_this_week || 0}
+                </Badge>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold mb-3 text-[hsl(var(--pdc-navy))] dark:text-white">
+                  Top Practicing Users:
+                </h4>
+                <div className="space-y-2">
+                  {(practiceMetrics?.top_practicing_users || []).slice(0, 3).map((user) => (
+                    <div key={user.user_id} className="flex justify-between items-center">
+                      <span className="text-sm">User {user.user_id.slice(0, 8)}...</span>
+                      <Badge variant="secondary">
+                        {formatDuration(user.total_minutes * 60)}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Daily Activity Breakdown */}
+        <Card className="border-t-4 border-t-[hsl(var(--pdc-gold-dark))] bg-gradient-to-br from-white to-amber-50/30 dark:from-gray-900 dark:to-amber-950/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-[hsl(var(--pdc-navy))] dark:text-white">
+              <div className="p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+                <BarChart3 className="h-5 w-5 text-amber-600" />
+              </div>
+              Activity Breakdown
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data?.usersByDifficulty || []}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name || ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
-                    }
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="count"
-                    nameKey="difficulty"
-                  >
-                    {data?.usersByDifficulty.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
+                <BarChart data={dailyMetrics.slice(-7)}> {/* Last 7 days */}
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--pdc-slate))" opacity={0.3} />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { weekday: 'short' })}
+                    stroke="hsl(var(--pdc-slate))"
+                  />
+                  <YAxis stroke="hsl(var(--pdc-slate))" />
+                  <Tooltip 
+                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar dataKey="video_views" stackId="a" fill="hsl(var(--pdc-gold))" name="Video Views" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="practice_sessions" stackId="a" fill="hsl(var(--pdc-navy))" name="Practice Sessions" />
+                  <Bar dataKey="bookings" stackId="a" fill="hsl(var(--pdc-slate))" name="Bookings" />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Recent Activity Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Activity Summary
+      {/* User Engagement Summary */}
+      {userEngagement && (
+        <Card className="border-t-4 border-t-emerald-500 bg-gradient-to-br from-white to-emerald-50/30 dark:from-gray-900 dark:to-emerald-950/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-[hsl(var(--pdc-navy))] dark:text-white">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+                <Users className="h-5 w-5 text-emerald-600" />
+              </div>
+              User Engagement Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b">
-                <span className="text-muted-foreground">
-                  Avg. Session Duration
-                </span>
-                <span className="font-semibold">12 min</span>
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-3xl font-bold text-[hsl(var(--pdc-navy))] dark:text-white">
+                  {userEngagement.active_users_7d}
+                </div>
+                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">Active Users (7d)</div>
               </div>
-              <div className="flex items-center justify-between py-3 border-b">
-                <span className="text-muted-foreground">
-                  Videos Watched per User
-                </span>
-                <span className="font-semibold">3.2</span>
+              <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div className="text-3xl font-bold text-emerald-600">
+                  {userEngagement.active_users_30d}
+                </div>
+                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">Active Users (30d)</div>
               </div>
-              <div className="flex items-center justify-between py-3 border-b">
-                <span className="text-muted-foreground">Practice Sessions</span>
-                <span className="font-semibold">
-                  {Math.floor(Math.random() * 500) + 100}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-3">
-                <span className="text-muted-foreground">
-                  New Users (This Period)
-                </span>
-                <span className="font-semibold text-green-500">
-                  +{Math.floor(Math.random() * 50) + 10}
-                </span>
+              <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-3xl font-bold text-purple-600">
+                  {userEngagement.retention_rate_7d.toFixed(1)}%
+                </div>
+                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">7-Day Retention</div>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 }

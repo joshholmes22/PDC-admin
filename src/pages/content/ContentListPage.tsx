@@ -55,7 +55,7 @@ export function ContentListPage() {
     deleteArtist,
   } = useContentStore();
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "created_at", desc: true },
+    { id: "createdAt", desc: true },
   ]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -94,9 +94,9 @@ export function ContentListPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="h-12 w-20 rounded bg-muted flex items-center justify-center overflow-hidden">
-            {row.original.thumbnail_url ? (
+            {(row.original as any).thumbnailURL ? (
               <img
-                src={row.original.thumbnail_url}
+                src={(row.original as any).thumbnailURL}
                 alt=""
                 className="h-full w-full object-cover"
               />
@@ -133,22 +133,22 @@ export function ContentListPage() {
       },
     },
     {
-      accessorKey: "duration_seconds",
+      accessorKey: "duration",
       header: "Duration",
       cell: ({ row }) => (
         <span className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          {formatDuration(row.original.duration_seconds ?? 0)}
+          {formatDuration((row.original as any).duration ?? 0)}
         </span>
       ),
     },
     {
-      accessorKey: "view_count",
+      accessorKey: "views",
       header: "Views",
       cell: ({ row }) => (
         <span className="flex items-center gap-1">
           <Eye className="h-3 w-3" />
-          {row.original.view_count?.toLocaleString() || 0}
+          {(row.original as any).views?.toLocaleString() || 0}
         </span>
       ),
     },
@@ -162,9 +162,9 @@ export function ContentListPage() {
       ),
     },
     {
-      accessorKey: "created_at",
+      accessorKey: "createdAt",
       header: "Added",
-      cell: ({ row }) => formatDate(row.original.created_at),
+      cell: ({ row }) => formatDate((row.original as any).createdAt),
     },
     {
       id: "actions",

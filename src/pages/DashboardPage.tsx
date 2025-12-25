@@ -52,17 +52,17 @@ export function DashboardPage() {
               .from("AppUser")
               .select("id", { count: "exact", head: true }),
             supabase
-              .from("videos")
+              .from("Video")
               .select("id", { count: "exact", head: true }),
             supabase
-              .from("scheduled_notifications")
+              .from("NotificationLog")
               .select("id", { count: "exact", head: true })
               .eq("status", "pending"),
             supabase
-              .from("drum_zone_bookings")
+              .from("Booking")
               .select("id", { count: "exact", head: true })
-              .gte("start_time", new Date().toISOString())
-              .eq("status", "confirmed"),
+              .gte("startTime", new Date().toISOString())
+              .eq("status", "booked"),
           ]);
 
         setStats({
