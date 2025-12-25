@@ -1,0 +1,594 @@
+// Database types - These mirror your Supabase schema
+// Update these types after running the migrations
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type UserRole = "user" | "admin" | "super_admin";
+
+export interface Database {
+  public: {
+    Tables: {
+      AppUser: {
+        Row: {
+          id: string;
+          authUserID: string;
+          firstName: string | null;
+          lastName: string | null;
+          age: number | null;
+          gender: string | null;
+          location: string | null;
+          drummingHistory: string | null;
+          avatarURL: string | null;
+          createdAt: string;
+          pushToken: string | null;
+          notificationsEnabled: boolean | null;
+          email: string | null; // Will be added by migration
+          role: UserRole; // Will be added by migration
+          updatedAt: string; // Will be added by migration
+        };
+        Insert: {
+          id?: string;
+          authUserID: string;
+          firstName?: string | null;
+          lastName?: string | null;
+          age?: number | null;
+          gender?: string | null;
+          location?: string | null;
+          drummingHistory?: string | null;
+          avatarURL?: string | null;
+          createdAt?: string;
+          pushToken?: string | null;
+          notificationsEnabled?: boolean | null;
+          email?: string | null;
+          role?: UserRole;
+          updatedAt?: string;
+        };
+        Update: {
+          id?: string;
+          authUserID?: string;
+          firstName?: string | null;
+          lastName?: string | null;
+          age?: number | null;
+          gender?: string | null;
+          location?: string | null;
+          drummingHistory?: string | null;
+          avatarURL?: string | null;
+          createdAt?: string;
+          pushToken?: string | null;
+          notificationsEnabled?: boolean | null;
+          email?: string | null;
+          role?: UserRole;
+          updatedAt?: string;
+        };
+      };
+      scheduled_notifications: {
+        Row: {
+          id: string;
+          title: string;
+          body: string;
+          scheduled_for: string;
+          status: "pending" | "sent" | "failed" | "cancelled";
+          target_audience: Json;
+          data: Json | null;
+          created_at: string;
+          updated_at: string;
+          sent_at: string | null;
+          created_by: string | null;
+          error_message: string | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          body: string;
+          scheduled_for: string;
+          status?: "pending" | "sent" | "failed" | "cancelled";
+          target_audience?: Json;
+          data?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+          sent_at?: string | null;
+          created_by?: string | null;
+          error_message?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          body?: string;
+          scheduled_for?: string;
+          status?: "pending" | "sent" | "failed" | "cancelled";
+          target_audience?: Json;
+          data?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+          sent_at?: string | null;
+          created_by?: string | null;
+          error_message?: string | null;
+        };
+      };
+      notification_templates: {
+        Row: {
+          id: string;
+          name: string;
+          title: string;
+          body: string;
+          target_audience: Json;
+          data: Json | null;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          title: string;
+          body: string;
+          target_audience?: Json;
+          data?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          title?: string;
+          body?: string;
+          target_audience?: Json;
+          data?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+      };
+      artists: {
+        Row: {
+          id: string;
+          name: string;
+          bio: string | null;
+          profile_image_url: string | null;
+          website_url: string | null;
+          instagram_handle: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          bio?: string | null;
+          profile_image_url?: string | null;
+          website_url?: string | null;
+          instagram_handle?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          bio?: string | null;
+          profile_image_url?: string | null;
+          website_url?: string | null;
+          instagram_handle?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      video_series: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          thumbnail_url: string | null;
+          artist_id: string | null;
+          difficulty_level:
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "all"
+            | null;
+          is_published: boolean;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          thumbnail_url?: string | null;
+          artist_id?: string | null;
+          difficulty_level?:
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "all"
+            | null;
+          is_published?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          thumbnail_url?: string | null;
+          artist_id?: string | null;
+          difficulty_level?:
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "all"
+            | null;
+          is_published?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      videos: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          video_url: string;
+          thumbnail_url: string | null;
+          duration_seconds: number | null;
+          series_id: string | null;
+          artist_id: string | null;
+          difficulty_level:
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "all"
+            | null;
+          tags: string[];
+          pdf_url: string | null;
+          is_published: boolean;
+          is_free: boolean;
+          display_order: number;
+          view_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          video_url: string;
+          thumbnail_url?: string | null;
+          duration_seconds?: number | null;
+          series_id?: string | null;
+          artist_id?: string | null;
+          difficulty_level?:
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "all"
+            | null;
+          tags?: string[];
+          pdf_url?: string | null;
+          is_published?: boolean;
+          is_free?: boolean;
+          display_order?: number;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          video_url?: string;
+          thumbnail_url?: string | null;
+          duration_seconds?: number | null;
+          series_id?: string | null;
+          artist_id?: string | null;
+          difficulty_level?:
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "all"
+            | null;
+          tags?: string[];
+          pdf_url?: string | null;
+          is_published?: boolean;
+          is_free?: boolean;
+          display_order?: number;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      goals: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          goal_type: "practice_time" | "video_completion" | "streak" | "custom";
+          target_value: number;
+          target_unit: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          is_active: boolean;
+          is_featured: boolean;
+          badge_image_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          goal_type: "practice_time" | "video_completion" | "streak" | "custom";
+          target_value: number;
+          target_unit?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          is_active?: boolean;
+          is_featured?: boolean;
+          badge_image_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          goal_type?:
+            | "practice_time"
+            | "video_completion"
+            | "streak"
+            | "custom";
+          target_value?: number;
+          target_unit?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          is_active?: boolean;
+          is_featured?: boolean;
+          badge_image_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      drum_zone_sites: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          address: string | null;
+          timezone: string;
+          is_active: boolean;
+          opening_hours: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          address?: string | null;
+          timezone?: string;
+          is_active?: boolean;
+          opening_hours?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          address?: string | null;
+          timezone?: string;
+          is_active?: boolean;
+          opening_hours?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      drum_zone_rooms: {
+        Row: {
+          id: string;
+          site_id: string;
+          name: string;
+          description: string | null;
+          kit_description: string | null;
+          image_url: string | null;
+          hourly_rate: number | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          site_id: string;
+          name: string;
+          description?: string | null;
+          kit_description?: string | null;
+          image_url?: string | null;
+          hourly_rate?: number | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          site_id?: string;
+          name?: string;
+          description?: string | null;
+          kit_description?: string | null;
+          image_url?: string | null;
+          hourly_rate?: number | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      drum_zone_bookings: {
+        Row: {
+          id: string;
+          room_id: string;
+          user_id: string;
+          start_time: string;
+          end_time: string;
+          status:
+            | "pending"
+            | "confirmed"
+            | "cancelled"
+            | "completed"
+            | "no_show";
+          total_price: number | null;
+          notes: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          cancellation_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          user_id: string;
+          start_time: string;
+          end_time: string;
+          status?:
+            | "pending"
+            | "confirmed"
+            | "cancelled"
+            | "completed"
+            | "no_show";
+          total_price?: number | null;
+          notes?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          cancellation_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          user_id?: string;
+          start_time?: string;
+          end_time?: string;
+          status?:
+            | "pending"
+            | "confirmed"
+            | "cancelled"
+            | "completed"
+            | "no_show";
+          total_price?: number | null;
+          notes?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          cancellation_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      video_views: {
+        Row: {
+          id: string;
+          video_id: string;
+          user_id: string;
+          watched_seconds: number;
+          completed: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          video_id: string;
+          user_id: string;
+          watched_seconds?: number;
+          completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          video_id?: string;
+          user_id?: string;
+          watched_seconds?: number;
+          completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      practice_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          video_id: string | null;
+          duration_minutes: number;
+          notes: string | null;
+          practice_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          video_id?: string | null;
+          duration_minutes: number;
+          notes?: string | null;
+          practice_date?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          video_id?: string | null;
+          duration_minutes?: number;
+          notes?: string | null;
+          practice_date?: string;
+          created_at?: string;
+        };
+      };
+    };
+    Views: {
+      admin_users: {
+        Row: {
+          id: string;
+          authUserID: string;
+          firstName: string | null;
+          lastName: string | null;
+          email: string | null;
+          role: UserRole;
+        };
+      };
+    };
+    Functions: {
+      is_admin: {
+        Args: { user_id: string };
+        Returns: boolean;
+      };
+    };
+  };
+}
+
+// Convenience type exports
+export type AppUser = Database["public"]["Tables"]["AppUser"]["Row"];
+export type ScheduledNotification =
+  Database["public"]["Tables"]["scheduled_notifications"]["Row"];
+export type NotificationTemplate =
+  Database["public"]["Tables"]["notification_templates"]["Row"];
+export type Artist = Database["public"]["Tables"]["artists"]["Row"];
+export type VideoSeries = Database["public"]["Tables"]["video_series"]["Row"];
+export type Video = Database["public"]["Tables"]["videos"]["Row"];
+export type Goal = Database["public"]["Tables"]["goals"]["Row"];
+export type DrumZoneSite =
+  Database["public"]["Tables"]["drum_zone_sites"]["Row"];
+export type DrumZoneRoom =
+  Database["public"]["Tables"]["drum_zone_rooms"]["Row"];
+export type DrumZoneBooking =
+  Database["public"]["Tables"]["drum_zone_bookings"]["Row"];
+export type VideoView = Database["public"]["Tables"]["video_views"]["Row"];
+export type PracticeLog = Database["public"]["Tables"]["practice_logs"]["Row"];
