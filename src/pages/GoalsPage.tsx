@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Target,
-  Calendar,
-  Trash2,
-  Bell,
-  Clock,
-} from "lucide-react";
+import { Target, Calendar, Trash2, Bell, Clock } from "lucide-react";
 import { useGoalsStore } from "@/stores";
 import {
   Button,
@@ -108,12 +102,13 @@ export function GoalsPage() {
           </Card>
         ) : (
           goals.map((goal) => (
-            <Card key={goal.id} className={!(goal as any).reminder ? "opacity-60" : ""}>
+            <Card
+              key={goal.id}
+              className={!(goal as any).reminder ? "opacity-60" : ""}
+            >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    User Practice Goal
-                  </CardTitle>
+                  <CardTitle className="text-lg">User Practice Goal</CardTitle>
                   <div className="flex gap-1">
                     <Button
                       variant="ghost"
@@ -132,7 +127,9 @@ export function GoalsPage() {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant={(goal as any).reminder ? "default" : "secondary"}>
+                  <Badge
+                    variant={(goal as any).reminder ? "default" : "secondary"}
+                  >
                     {(goal as any).reminder ? (
                       <Bell className="h-3 w-3 mr-1" />
                     ) : (
@@ -147,12 +144,13 @@ export function GoalsPage() {
                     <Target className="h-3 w-3" />
                     Target: {(goal as any).targetminutes} minutes
                   </div>
-                  {(goal as any).practicedays && (goal as any).practicedays.length > 0 && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      Practice Days: {(goal as any).practicedays.join(", ")}
-                    </div>
-                  )}
+                  {(goal as any).practicedays &&
+                    (goal as any).practicedays.length > 0 && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        Practice Days: {(goal as any).practicedays.join(", ")}
+                      </div>
+                    )}
                   {(goal as any).remindertime && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Clock className="h-3 w-3" />

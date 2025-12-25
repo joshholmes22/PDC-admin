@@ -70,16 +70,24 @@ export function AnalyticsPage() {
   const totalVideos = topVideos.length;
   const totalViews = topVideos.reduce((sum, video) => sum + video.views, 0);
   const totalPracticeMinutes = practiceMetrics?.total_practice_minutes || 0;
-  const practiceSessionsThisWeek = practiceMetrics?.practice_sessions_this_week || 0;
+  const practiceSessionsThisWeek =
+    practiceMetrics?.practice_sessions_this_week || 0;
   const totalPracticeSessions = practiceMetrics?.total_practice_sessions || 0;
-  
+
   // Grant-worthy engagement metrics
   const dailyMetricsLast7 = dailyMetrics.slice(-7);
-  const avgDailyActiveUsers = dailyMetricsLast7.length > 0 
-    ? Math.round(dailyMetricsLast7.reduce((sum, day) => sum + day.active_users, 0) / dailyMetricsLast7.length)
-    : 0;
-  const totalEngagements = dailyMetrics.reduce((sum, day) => 
-    sum + day.active_users + day.video_views + day.practice_sessions, 0);
+  const avgDailyActiveUsers =
+    dailyMetricsLast7.length > 0
+      ? Math.round(
+          dailyMetricsLast7.reduce((sum, day) => sum + day.active_users, 0) /
+            dailyMetricsLast7.length
+        )
+      : 0;
+  const totalEngagements = dailyMetrics.reduce(
+    (sum, day) =>
+      sum + day.active_users + day.video_views + day.practice_sessions,
+    0
+  );
   const avgSessionDuration = userEngagement?.avg_session_duration || 0;
   const retentionRate = userEngagement?.retention_rate_7d || 0;
 
@@ -100,7 +108,9 @@ export function AnalyticsPage() {
       color: "text-[hsl(var(--pdc-gold))]",
       bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
       bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
-      subtitle: `${((activeUsers30d / Math.max(totalUsers, 1)) * 100).toFixed(1)}% engagement rate`,
+      subtitle: `${((activeUsers30d / Math.max(totalUsers, 1)) * 100).toFixed(
+        1
+      )}% engagement rate`,
     },
     {
       title: "Video Engagements",
@@ -145,11 +155,18 @@ export function AnalyticsPage() {
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-[hsl(var(--pdc-navy))] flex items-center gap-3">
-            Internal Analytics 
-            <span className="text-[hsl(var(--pdc-gold))]" role="img" aria-label="target">🎯</span>
+            Internal Analytics
+            <span
+              className="text-[hsl(var(--pdc-gold))]"
+              role="img"
+              aria-label="target"
+            >
+              🎯
+            </span>
           </h1>
           <p className="text-[hsl(var(--pdc-slate))] text-lg">
-            Real-time insights from your internal data - no third parties needed!
+            Real-time insights from your internal data - no third parties
+            needed!
           </p>
         </div>
         <div className="flex gap-2">
@@ -160,7 +177,11 @@ export function AnalyticsPage() {
               size="sm"
               onClick={() => setDateRange(range as "7d" | "30d" | "90d")}
             >
-              {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
+              {range === "7d"
+                ? "7 Days"
+                : range === "30d"
+                ? "30 Days"
+                : "90 Days"}
             </Button>
           ))}
         </div>
@@ -171,12 +192,17 @@ export function AnalyticsPage() {
         {statCards.map((stat, index) => {
           const IconComponent = stat.icon;
           return (
-            <Card key={index} className="border-l-4 border-l-[hsl(var(--pdc-gold))] hover:shadow-lg transition-all duration-200 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+            <Card
+              key={index}
+              className="border-l-4 border-l-[hsl(var(--pdc-gold))] hover:shadow-lg transition-all duration-200 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50"
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-semibold text-[hsl(var(--pdc-navy))] dark:text-white">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${stat.bgColor || 'bg-gray-50'}`}>
+                <div
+                  className={`p-2 rounded-lg ${stat.bgColor || "bg-gray-50"}`}
+                >
                   <IconComponent className={`h-5 w-5 ${stat.color}`} />
                 </div>
               </CardHeader>
@@ -208,29 +234,40 @@ export function AnalyticsPage() {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dailyMetrics}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--pdc-slate))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--pdc-slate))"
+                    opacity={0.3}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
                     stroke="hsl(var(--pdc-slate))"
                   />
                   <YAxis stroke="hsl(var(--pdc-slate))" />
-                  <Tooltip 
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                    formatter={(value) => [value, 'Active Users']}
+                  <Tooltip
+                    labelFormatter={(value) =>
+                      new Date(value).toLocaleDateString()
+                    }
+                    formatter={(value) => [value, "Active Users"]}
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="active_users" 
-                    stroke="hsl(var(--pdc-gold))" 
+                  <Line
+                    type="monotone"
+                    dataKey="active_users"
+                    stroke="hsl(var(--pdc-gold))"
                     strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--pdc-gold))', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, fill: 'hsl(var(--pdc-gold-dark))' }}
+                    dot={{ fill: "hsl(var(--pdc-gold))", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: "hsl(var(--pdc-gold-dark))" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -252,35 +289,45 @@ export function AnalyticsPage() {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topVideos.slice(0, 5)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--pdc-slate))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="title" 
-                    tick={{ fontSize: 12, fill: 'hsl(var(--pdc-slate))' }}
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--pdc-slate))"
+                    opacity={0.3}
+                  />
+                  <XAxis
+                    dataKey="title"
+                    tick={{ fontSize: 12, fill: "hsl(var(--pdc-slate))" }}
                     angle={-45}
                     textAnchor="end"
                     height={80}
                     interval={0}
-                    tickFormatter={(value) => value.length > 10 ? value.slice(0, 10) + '...' : value}
+                    tickFormatter={(value) =>
+                      value.length > 10 ? value.slice(0, 10) + "..." : value
+                    }
                   />
                   <YAxis stroke="hsl(var(--pdc-slate))" />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => {
-                      const video = topVideos.find(v => v.title === value);
+                      const video = topVideos.find((v) => v.title === value);
                       return [
                         `${value} views`,
-                        video ? `${video.completion_rate?.toFixed(1)}% completion` : '',
-                        video ? `${video.abandonment_rate?.toFixed(1)}% abandonment` : ''
+                        video
+                          ? `${video.completion_rate?.toFixed(1)}% completion`
+                          : "",
+                        video
+                          ? `${video.abandonment_rate?.toFixed(1)}% abandonment`
+                          : "",
                       ];
                     }}
                     labelFormatter={(value) => value}
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
                     }}
                   />
-                  <Bar 
-                    dataKey="views" 
+                  <Bar
+                    dataKey="views"
                     fill="hsl(var(--pdc-gold))"
                     radius={[6, 6, 0, 0]}
                   />
@@ -306,8 +353,13 @@ export function AnalyticsPage() {
                 <span className="text-sm font-medium text-[hsl(var(--pdc-slate))]">
                   Avg Session Duration:
                 </span>
-                <Badge variant="outline" className="border-[hsl(var(--pdc-gold))] text-[hsl(var(--pdc-gold-dark))]">
-                  {formatDuration((practiceMetrics?.avg_practice_session_duration || 0) * 60)}
+                <Badge
+                  variant="outline"
+                  className="border-[hsl(var(--pdc-gold))] text-[hsl(var(--pdc-gold-dark))]"
+                >
+                  {formatDuration(
+                    (practiceMetrics?.avg_practice_session_duration || 0) * 60
+                  )}
                 </Badge>
               </div>
               <div className="flex justify-between">
@@ -331,14 +383,21 @@ export function AnalyticsPage() {
                   Top Practicing Users:
                 </h4>
                 <div className="space-y-2">
-                  {(practiceMetrics?.top_practicing_users || []).slice(0, 3).map((user) => (
-                    <div key={user.user_id} className="flex justify-between items-center">
-                      <span className="text-sm">User {user.user_id.slice(0, 8)}...</span>
-                      <Badge variant="secondary">
-                        {formatDuration(user.total_minutes * 60)}
-                      </Badge>
-                    </div>
-                  ))}
+                  {(practiceMetrics?.top_practicing_users || [])
+                    .slice(0, 3)
+                    .map((user) => (
+                      <div
+                        key={user.user_id}
+                        className="flex justify-between items-center"
+                      >
+                        <span className="text-sm">
+                          User {user.user_id.slice(0, 8)}...
+                        </span>
+                        <Badge variant="secondary">
+                          {formatDuration(user.total_minutes * 60)}
+                        </Badge>
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
@@ -358,25 +417,53 @@ export function AnalyticsPage() {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyMetrics.slice(-7)}> {/* Last 7 days */}
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--pdc-slate))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { weekday: 'short' })}
+                <BarChart data={dailyMetrics.slice(-7)}>
+                  {" "}
+                  {/* Last 7 days */}
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--pdc-slate))"
+                    opacity={0.3}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString("en-US", {
+                        weekday: "short",
+                      })
+                    }
                     stroke="hsl(var(--pdc-slate))"
                   />
                   <YAxis stroke="hsl(var(--pdc-slate))" />
-                  <Tooltip 
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                  <Tooltip
+                    labelFormatter={(value) =>
+                      new Date(value).toLocaleDateString()
+                    }
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
                     }}
                   />
-                  <Bar dataKey="video_views" stackId="a" fill="hsl(var(--pdc-gold))" name="Video Views" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="practice_sessions" stackId="a" fill="hsl(var(--pdc-navy))" name="Practice Sessions" />
-                  <Bar dataKey="bookings" stackId="a" fill="hsl(var(--pdc-slate))" name="Bookings" />
+                  <Bar
+                    dataKey="video_views"
+                    stackId="a"
+                    fill="hsl(var(--pdc-gold))"
+                    name="Video Views"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="practice_sessions"
+                    stackId="a"
+                    fill="hsl(var(--pdc-navy))"
+                    name="Practice Sessions"
+                  />
+                  <Bar
+                    dataKey="bookings"
+                    stackId="a"
+                    fill="hsl(var(--pdc-slate))"
+                    name="Bookings"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -401,19 +488,25 @@ export function AnalyticsPage() {
                 <div className="text-3xl font-bold text-[hsl(var(--pdc-navy))] dark:text-white">
                   {userEngagement.active_users_7d}
                 </div>
-                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">Active Users (7d)</div>
+                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">
+                  Active Users (7d)
+                </div>
               </div>
               <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-emerald-200 dark:border-emerald-800">
                 <div className="text-3xl font-bold text-emerald-600">
                   {userEngagement.active_users_30d}
                 </div>
-                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">Active Users (30d)</div>
+                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">
+                  Active Users (30d)
+                </div>
               </div>
               <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-purple-200 dark:border-purple-800">
                 <div className="text-3xl font-bold text-purple-600">
                   {userEngagement.retention_rate_7d.toFixed(1)}%
                 </div>
-                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">7-Day Retention</div>
+                <div className="text-sm text-[hsl(var(--pdc-slate))] font-medium">
+                  7-Day Retention
+                </div>
               </div>
             </div>
           </CardContent>

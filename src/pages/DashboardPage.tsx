@@ -51,9 +51,7 @@ export function DashboardPage() {
             supabase
               .from("AppUser")
               .select("id", { count: "exact", head: true }),
-            supabase
-              .from("Video")
-              .select("id", { count: "exact", head: true }),
+            supabase.from("Video").select("id", { count: "exact", head: true }),
             supabase
               .from("NotificationLog")
               .select("id", { count: "exact", head: true })

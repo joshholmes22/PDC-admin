@@ -30,7 +30,8 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from("Goal")
-        .select(`
+        .select(
+          `
           id,
           userid,
           targetminutes,
@@ -38,7 +39,8 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
           reminder,
           createdat,
           remindertime
-        `)
+        `
+        )
         .order("createdat", { ascending: false });
 
       if (error) throw error;
