@@ -77,7 +77,7 @@ export function AnalyticsPage() {
 
   // Grant-worthy engagement metrics
   const dailyMetricsLast7 = dailyMetrics.slice(-7);
-  
+
   // Core DAU (PostHog-style: App_Opened only)
   const avgCoreDailyActiveUsers =
     dailyMetricsLast7.length > 0
@@ -86,7 +86,7 @@ export function AnalyticsPage() {
             dailyMetricsLast7.length
         )
       : 0;
-  
+
   // Engagement DAU (All activities)
   const avgEngagementDailyActiveUsers =
     dailyMetricsLast7.length > 0
@@ -95,7 +95,7 @@ export function AnalyticsPage() {
             dailyMetricsLast7.length
         )
       : 0;
-  
+
   const totalEngagements = dailyMetrics.reduce(
     (sum, day) =>
       sum + day.active_users + day.video_views + day.practice_sessions,
@@ -109,7 +109,7 @@ export function AnalyticsPage() {
       title: "Core Daily Active Users",
       value: avgCoreDailyActiveUsers.toString(),
       icon: Users,
-      color: "text-[hsl(var(--pdc-navy))]", 
+      color: "text-[hsl(var(--pdc-navy))]",
       bgColor: "bg-blue-50 dark:bg-blue-950/20",
       subtitle: `PostHog-style DAU (app opens only)`,
     },
@@ -178,8 +178,7 @@ export function AnalyticsPage() {
             </span>
           </h1>
           <p className="text-[hsl(var(--pdc-slate))] text-lg">
-            Real-time insights from your internal data - no third parties
-            needed!
+            Real-time insights from your internal data
           </p>
         </div>
         <div className="flex gap-2">
