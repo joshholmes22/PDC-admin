@@ -1,5 +1,6 @@
 export { useAuthStore } from "./authStore";
 export { useNotificationStore } from "./notificationStore";
+export { useNotificationAnalyticsStore } from "./notificationAnalyticsStore";
 export { useContentStore } from "./contentStore";
 export { useUsersStore } from "./usersStore";
 export { useGoalsStore } from "./goalsStore";

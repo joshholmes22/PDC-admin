@@ -27,6 +27,21 @@ interface NotificationState {
   cancelNotification: (
     id: string
   ) => Promise<{ success: boolean; error?: string }>;
+  sendInstantNotification: (input: {
+    title: string;
+    body: string;
+    audience_type: "all" | "admins" | "segment" | "users";
+  }) => Promise<{
+    success: boolean;
+    error?: string;
+    data?: ScheduledNotification;
+  }>;
+
+  // Process scheduled notifications
+  processScheduledNotifications: () => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
 
   // Templates
   fetchTemplates: () => Promise<void>;
@@ -52,9 +67,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase
-        .from("NotificationLog")
+        .from("scheduled_notifications")
         .select("*")
-        .order("sentAt", { ascending: false });
+        .order("sent_at", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
       set({ notifications: data || [] });
@@ -157,6 +172,66 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     } as Partial<ScheduledNotificationInput>);
   },
 
+  sendInstantNotification: async (input) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Build target audience object
+      const targetAudience =
+        input.audience_type === "all"
+          ? { type: "all" }
+          : input.audience_type === "admins"
+          ? { type: "admins" }
+          : input.audience_type === "segment"
+          ? { type: "segment", filter: {} }
+          : { type: "users", userIds: [] };
+
+      // Save to database first (so it appears on dashboard)
+      const { data: notification, error: dbError } = await supabase
+        .from("scheduled_notifications")
+        .insert({
+          title: input.title,
+          body: input.body,
+          scheduled_for: new Date().toISOString(), // Send immediately
+          target_audience: targetAudience,
+          status: "pending",
+        } as never)
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // Update local state to include the new notification
+      const currentNotifications = get().notifications;
+      set({
+        notifications: [
+          ...currentNotifications,
+          notification as ScheduledNotification,
+        ],
+      });
+
+      // Process the notification immediately
+      const { error: functionError } = await supabase.functions.invoke(
+        "process-notifications"
+      );
+
+      if (functionError) {
+        console.warn("Edge function error:", functionError);
+        // Don't throw here - notification is saved and will be processed by cron
+      }
+
+      return { success: true, data: notification as ScheduledNotification };
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to send instant notification";
+      set({ error: message });
+      return { success: false, error: message };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
   fetchTemplates: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -243,6 +318,33 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to delete template";
+      set({ error: message });
+      return { success: false, error: message };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Manual processing function for scheduled notifications
+  processScheduledNotifications: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      // Call the Edge Function to process all pending notifications
+      const { error } = await supabase.functions.invoke(
+        "process-notifications"
+      );
+
+      if (error) throw error;
+
+      // Refresh the notifications list to see updated statuses
+      await get().fetchNotifications();
+
+      return { success: true };
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to process scheduled notifications";
       set({ error: message });
       return { success: false, error: message };
     } finally {

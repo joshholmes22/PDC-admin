@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   Users,
@@ -8,6 +8,7 @@ import {
   Target,
   Award,
   PlayCircle,
+  Bell,
 } from "lucide-react";
 import {
   LineChart,
@@ -31,6 +32,7 @@ import {
   Badge,
 } from "@/components/ui";
 import { useAnalyticsStore } from "@/stores/analyticsStore";
+import { NotificationAnalytics } from "@/components/analytics/NotificationAnalytics";
 import { formatDuration } from "@/lib/utils";
 
 export function AnalyticsPage() {
@@ -45,6 +47,8 @@ export function AnalyticsPage() {
     setDateRange,
     fetchAllAnalytics,
   } = useAnalyticsStore();
+
+  const [activeTab, setActiveTab] = useState<"overview" | "notifications">("overview");
 
   useEffect(() => {
     fetchAllAnalytics();
@@ -66,13 +70,13 @@ export function AnalyticsPage() {
 
   // Calculate summary stats - optimized for grant applications
   const totalUsers = userEngagement?.total_users || 0;
-  const activeUsers7d = userEngagement?.active_users_7d || 0;
+  // const activeUsers7d = userEngagement?.active_users_7d || 0;
   const activeUsers30d = userEngagement?.active_users_30d || 0;
   const totalVideos = topVideos.length;
   const totalViews = topVideos.reduce((sum, video) => sum + video.views, 0);
   const totalPracticeMinutes = practiceMetrics?.total_practice_minutes || 0;
-  const practiceSessionsThisWeek =
-    practiceMetrics?.practice_sessions_this_week || 0;
+  // const practiceSessionsThisWeek =
+  //   practiceMetrics?.practice_sessions_this_week || 0;
   const totalPracticeSessions = practiceMetrics?.total_practice_sessions || 0;
 
   // Grant-worthy engagement metrics
@@ -199,7 +203,36 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <button
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === "overview"
+              ? "bg-white text-[hsl(var(--pdc-navy))] shadow-sm"
+              : "text-gray-600 hover:text-[hsl(var(--pdc-navy))]"
+          }`}
+          onClick={() => setActiveTab("overview")}
+        >
+          <BarChart3 className="w-4 h-4 mr-2 inline-block" />
+          Overview
+        </button>
+        <button
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === "notifications"
+              ? "bg-white text-[hsl(var(--pdc-navy))] shadow-sm"
+              : "text-gray-600 hover:text-[hsl(var(--pdc-navy))]"
+          }`}
+          onClick={() => setActiveTab("notifications")}
+        >
+          <Bell className="w-4 h-4 mr-2 inline-block" />
+          Notifications
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "overview" ? (
+        <div className="space-y-8">
+          {/* Stats Overview */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat, index) => {
           const IconComponent = stat.icon;
@@ -534,6 +567,10 @@ export function AnalyticsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+        </div>
+      ) : (
+        <NotificationAnalytics />
       )}
     </div>
   );

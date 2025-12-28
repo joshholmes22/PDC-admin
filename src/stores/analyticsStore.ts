@@ -259,15 +259,15 @@ export const useAnalyticsStore = create<AnalyticsStoreState>()(
 
           // Active users in different periods
           const activeUsers7d = new Set(
-            events
-              .filter((e) => new Date(e.created_at) >= sevenDaysAgo)
-              .map((e) => e.user_id)
+            (events as any[])
+              .filter((e: any) => new Date(e.created_at) >= sevenDaysAgo)
+              .map((e: any) => e.user_id)
           ).size;
 
           const activeUsers30d = new Set(
-            events
-              .filter((e) => new Date(e.created_at) >= thirtyDaysAgo)
-              .map((e) => e.user_id)
+            (events as any[])
+              .filter((e: any) => new Date(e.created_at) >= thirtyDaysAgo)
+              .map((e: any) => e.user_id)
           ).size;
 
           // Calculate session metrics (simplified)
@@ -463,49 +463,4 @@ function processVideoAnalytics(events: any[], videos: any[]): VideoAnalytics[] {
     }))
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
-}
-
-function processUserEngagement(
-  totalUsers: number,
-  recentActivity: any[]
-): UserEngagement {
-  const now = Date.now();
-  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-
-  const activeUsers7d = new Set();
-  const activeUsers30d = new Set();
-  const sessionLengths: number[] = [];
-
-  recentActivity.forEach((event) => {
-    const eventTime = new Date(event.created_at).getTime();
-
-    if (eventTime >= sevenDaysAgo) {
-      activeUsers7d.add(event.user_id);
-    }
-
-    if (eventTime >= thirtyDaysAgo) {
-      activeUsers30d.add(event.user_id);
-    }
-
-    // Track session lengths for App_Opened to App_Backgrounded
-    if (event.event_name === "App_Opened") {
-      // This would need more sophisticated session tracking
-      // For now, use a placeholder
-    }
-  });
-
-  return {
-    total_users: totalUsers,
-    active_users_7d: activeUsers7d.size,
-    active_users_30d: activeUsers30d.size,
-    avg_session_duration:
-      sessionLengths.length > 0
-        ? sessionLengths.reduce((a, b) => a + b, 0) / sessionLengths.length
-        : 0,
-    retention_rate_7d:
-      totalUsers > 0 ? (activeUsers7d.size / totalUsers) * 100 : 0,
-    retention_rate_30d:
-      totalUsers > 0 ? (activeUsers30d.size / totalUsers) * 100 : 0,
-  };
 }

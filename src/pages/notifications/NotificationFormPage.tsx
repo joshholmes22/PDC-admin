@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Bell, Send, Save, Clock } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Bell, Send, Save, Clock, FileText } from "lucide-react";
 import { useNotificationStore } from "@/stores";
 import type {
   ScheduledNotificationInput,
   TargetAudience,
 } from "@/types/schemas";
+import type { NotificationTemplate } from "@/types";
 import {
   Button,
   Input,
@@ -20,16 +23,21 @@ import {
   CardFooter,
   Alert,
   LoadingState,
+  Select,
+  Badge,
 } from "@/components/ui";
 import { Link } from "react-router-dom";
 
-// Simplified form values without the complex discriminated union
-interface FormValues {
-  title: string;
-  body: string;
-  scheduled_for: string;
-  audience_type: "all" | "segment" | "users";
-}
+// Form validation schema
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title too long"),
+  body: z.string().min(1, "Body is required").max(500, "Body too long"),
+  scheduled_for: z.string().optional(),
+  audience_type: z.enum(["all", "admins", "segment", "users"]),
+  send_immediately: z.boolean(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function NotificationFormPage() {
   const navigate = useNavigate();
@@ -38,34 +46,45 @@ export function NotificationFormPage() {
 
   const {
     notifications,
+    templates,
     isLoading,
     error,
     createNotification,
     updateNotification,
+    sendInstantNotification,
     fetchNotifications,
+    fetchTemplates,
   } = useNotificationStore();
 
   const [isSaving, setIsSaving] = useState(false);
+  const [sendType, setSendType] = useState<"schedule" | "instant">("schedule");
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<NotificationTemplate | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       body: "",
       scheduled_for: "",
       audience_type: "all",
+      send_immediately: false,
     },
   });
 
   useEffect(() => {
+    fetchTemplates(); // Load templates when component mounts
     if (isEditing) {
       fetchNotifications();
     }
-  }, [isEditing, fetchNotifications]);
+  }, [isEditing, fetchNotifications, fetchTemplates]);
 
   useEffect(() => {
     if (isEditing && notifications.length > 0) {
@@ -84,37 +103,121 @@ export function NotificationFormPage() {
     }
   }, [isEditing, id, notifications, reset]);
 
+  // Handle template selection
+  const handleTemplateSelect = (template: NotificationTemplate) => {
+    setSelectedTemplate(template);
+
+    // Parse target audience
+    const audienceData = template.target_audience as TargetAudience;
+    const audienceType = audienceData?.type || "all";
+
+    setValue("title", template.title);
+    setValue("body", template.body);
+    setValue("audience_type", audienceType as FormValues["audience_type"]);
+  };
+
+  // Replace variables in template content
+  const replaceTemplateVariables = (content: string): string => {
+    if (!selectedTemplate?.variables) return content;
+
+    let result = content;
+    selectedTemplate.variables.forEach((variable) => {
+      // Replace with example values for preview
+      const exampleValues: Record<string, string> = {
+        user_name: "John Doe",
+        app_name: "Palace Drum Clinic",
+        artist_name: "Mike Johnston",
+        content_type: "video lesson",
+        site_name: "Downtown Studio",
+        room_name: "Room A",
+        booking_time: "2:00 PM",
+        achievement_name: "Practice Streak",
+      };
+
+      const regex = new RegExp(`{${variable}}`, "g");
+      result = result.replace(
+        regex,
+        exampleValues[variable] || `{${variable}}`
+      );
+    });
+
+    return result;
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsSaving(true);
     try {
-      // Build the target_audience object based on type
-      const targetAudience: TargetAudience =
-        data.audience_type === "all"
-          ? { type: "all" }
-          : data.audience_type === "segment"
-          ? { type: "segment", filter: {} }
-          : { type: "users", userIds: [] };
+      if (sendType === "instant") {
+        // Send notification immediately
+        const result = await sendInstantNotification({
+          title: data.title,
+          body: data.body,
+          audience_type: data.audience_type,
+        });
 
-      const notificationData: ScheduledNotificationInput = {
-        title: data.title,
-        body: data.body,
-        scheduled_for: new Date(data.scheduled_for).toISOString(),
-        target_audience: targetAudience,
-      };
-
-      if (isEditing && id) {
-        await updateNotification(id, notificationData);
+        if (!result.success) {
+          throw new Error(
+            result.error || "Failed to send instant notification"
+          );
+        }
       } else {
-        await createNotification(notificationData);
+        // Schedule notification
+        if (!data.scheduled_for) {
+          throw new Error(
+            "Schedule time is required for scheduled notifications"
+          );
+        }
+
+        // Validate that scheduled time is in the future
+        const scheduledDate = new Date(data.scheduled_for);
+        const minDate = new Date(Date.now() + 30 * 1000); // 30 seconds
+
+        if (scheduledDate < minDate) {
+          throw new Error(
+            "Scheduled time must be at least 30 seconds in the future"
+          );
+        }
+
+        // Build the target_audience object based on type
+        const targetAudience: TargetAudience =
+          data.audience_type === "all"
+            ? { type: "all" }
+            : data.audience_type === "admins"
+            ? { type: "admins" }
+            : data.audience_type === "segment"
+            ? { type: "segment", filter: {} }
+            : { type: "users", userIds: [] };
+
+        const notificationData: ScheduledNotificationInput = {
+          title: data.title,
+          body: data.body,
+          scheduled_for: scheduledDate.toISOString(),
+          target_audience: targetAudience,
+        };
+
+        if (isEditing && id) {
+          const result = await updateNotification(id, notificationData);
+          if (!result.success) {
+            throw new Error(result.error || "Failed to update notification");
+          }
+        } else {
+          const result = await createNotification(notificationData);
+          if (!result.success) {
+            throw new Error(result.error || "Failed to create notification");
+          }
+        }
       }
       navigate("/notifications");
+    } catch (error) {
+      console.error("Form submission error:", error);
+      // Error will be set by the store, but we could add a toast here
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Calculate min datetime (now + 5 minutes)
-  const minDateTime = new Date(Date.now() + 5 * 60 * 1000)
+  // Calculate min datetime (now + 30 seconds)
+  const minDateTime = new Date(Date.now() + 30 * 1000)
     .toISOString()
     .slice(0, 16);
 
@@ -156,6 +259,82 @@ export function NotificationFormPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Template Selection */}
+            {!isEditing && (
+              <div className="space-y-2">
+                <Label>Start from Template (Optional)</Label>
+                <Select
+                  value={selectedTemplate?.id || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const template = templates.find((t) => t.id === value);
+                    if (template) {
+                      handleTemplateSelect(template);
+                    } else {
+                      setSelectedTemplate(null);
+                    }
+                  }}
+                  options={[
+                    { value: "", label: "Create from scratch" },
+                    ...templates
+                      .filter((t) => t.is_active)
+                      .map((template) => ({
+                        value: template.id,
+                        label: `${template.name} (${template.category})`,
+                      })),
+                  ]}
+                />
+
+                {selectedTemplate && (
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="font-medium text-sm">
+                        {selectedTemplate.name}
+                      </span>
+                      <Badge variant="secondary">
+                        {selectedTemplate.category}
+                      </Badge>
+                    </div>
+
+                    {selectedTemplate.variables &&
+                      selectedTemplate.variables.length > 0 && (
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">
+                            Variables to replace:{" "}
+                          </span>
+                          {selectedTemplate.variables.map((variable) => (
+                            <Badge
+                              key={variable}
+                              variant="outline"
+                              className="ml-1"
+                            >
+                              {variable}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                    <div className="text-xs text-muted-foreground">
+                      <div>
+                        <strong>Preview Title:</strong>{" "}
+                        {replaceTemplateVariables(selectedTemplate.title)}
+                      </div>
+                      <div>
+                        <strong>Preview Body:</strong>{" "}
+                        {replaceTemplateVariables(selectedTemplate.body)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Select a template to auto-fill the form fields, then customize
+                  as needed.
+                </p>
+              </div>
+            )}
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
@@ -194,28 +373,65 @@ export function NotificationFormPage() {
               </p>
             </div>
 
-            {/* Scheduled For */}
+            {/* Send Type Selection */}
             <div className="space-y-2">
-              <Label htmlFor="scheduled_for">
-                <Clock className="h-4 w-4 inline mr-1" />
-                Schedule For *
-              </Label>
-              <Input
-                id="scheduled_for"
-                type="datetime-local"
-                min={minDateTime}
-                {...register("scheduled_for")}
-              />
-              {errors.scheduled_for && (
-                <p className="text-sm text-destructive">
-                  {errors.scheduled_for.message}
-                </p>
-              )}
+              <Label>Send Options</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="instant"
+                    checked={sendType === "instant"}
+                    onChange={(e) =>
+                      setSendType(e.target.value as "instant" | "schedule")
+                    }
+                    className="text-primary focus:ring-primary"
+                  />
+                  <span>Send Now</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="schedule"
+                    checked={sendType === "schedule"}
+                    onChange={(e) =>
+                      setSendType(e.target.value as "instant" | "schedule")
+                    }
+                    className="text-primary focus:ring-primary"
+                  />
+                  <span>Schedule for Later</span>
+                </label>
+              </div>
               <p className="text-xs text-muted-foreground">
-                When should this notification be sent? Must be at least 5
-                minutes in the future.
+                Send now will deliver the notification immediately. Schedule for
+                later allows you to set a specific time.
               </p>
             </div>
+
+            {/* Scheduled For - only show when scheduling */}
+            {sendType === "schedule" && (
+              <div className="space-y-2">
+                <Label htmlFor="scheduled_for">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  Schedule For *
+                </Label>
+                <Input
+                  id="scheduled_for"
+                  type="datetime-local"
+                  min={minDateTime}
+                  {...register("scheduled_for")}
+                />
+                {errors.scheduled_for && (
+                  <p className="text-sm text-destructive">
+                    {errors.scheduled_for.message}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  When should this notification be sent? Must be at least 30
+                  seconds in the future.
+                </p>
+              </div>
+            )}
 
             {/* Target Audience */}
             <div className="space-y-2">
@@ -226,6 +442,7 @@ export function NotificationFormPage() {
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="all">All Users</option>
+                <option value="admins">Admins Only</option>
                 <option value="segment">Custom Segment</option>
                 <option value="users">Specific Users</option>
               </select>
@@ -246,15 +463,20 @@ export function NotificationFormPage() {
             </Button>
             <Button type="submit" disabled={isSaving}>
               {isSaving ? (
-                <>Saving...</>
+                <>Sending...</>
               ) : isEditing ? (
                 <>
                   <Save className="h-4 w-4 mr-2" />
                   Save Changes
                 </>
-              ) : (
+              ) : sendType === "instant" ? (
                 <>
                   <Send className="h-4 w-4 mr-2" />
+                  Send Now
+                </>
+              ) : (
+                <>
+                  <Clock className="h-4 w-4 mr-2" />
                   Schedule Notification
                 </>
               )}

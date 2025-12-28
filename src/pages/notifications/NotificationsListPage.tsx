@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Bell, Clock, Check, XCircle, Trash2, Edit } from "lucide-react";
+import {
+  Plus,
+  Bell,
+  Clock,
+  Check,
+  XCircle,
+  Trash2,
+  Edit,
+  Send,
+} from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -40,6 +49,7 @@ export function NotificationsListPage() {
     error,
     fetchNotifications,
     deleteNotification,
+    processScheduledNotifications,
   } = useNotificationStore();
   const [sorting, setSorting] = useState<SortingState>([
     { id: "scheduled_for", desc: true },
@@ -96,11 +106,28 @@ export function NotificationsListPage() {
       header: "Audience",
       cell: ({ row }) => {
         const audience = row.original.target_audience;
-        if (audience === "all")
-          return <Badge variant="secondary">All Users</Badge>;
-        if (audience === "subscribers")
-          return <Badge variant="secondary">Subscribers</Badge>;
-        return <Badge variant="outline">Segment</Badge>;
+
+        // Handle different audience formats
+        let audienceData;
+        try {
+          audienceData =
+            typeof audience === "string" ? JSON.parse(audience) : audience;
+        } catch {
+          audienceData = { type: "all" };
+        }
+
+        switch (audienceData?.type) {
+          case "all":
+            return <Badge variant="secondary">All Users</Badge>;
+          case "admins":
+            return <Badge variant="destructive">Admins Only</Badge>;
+          case "users":
+            return <Badge variant="outline">Specific Users</Badge>;
+          case "segment":
+            return <Badge variant="outline">Custom Segment</Badge>;
+          default:
+            return <Badge variant="secondary">All Users</Badge>;
+        }
       },
     },
     {
@@ -157,12 +184,22 @@ export function NotificationsListPage() {
             Schedule and manage push notifications for your users.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/notifications/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule Notification
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => processScheduledNotifications()}
+            disabled={isLoading}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Process Now
+          </Button>
+          <Button asChild>
+            <Link to="/notifications/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Schedule Notification
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {error && <Alert variant="destructive">{error}</Alert>}

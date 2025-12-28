@@ -3,6 +3,7 @@ import { z } from "zod";
 // Notification schemas
 export const targetAudienceSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("all") }),
+  z.object({ type: z.literal("admins") }),
   z.object({
     type: z.literal("segment"),
     filter: z.record(z.string(), z.unknown()),
@@ -23,10 +24,23 @@ export const scheduledNotificationSchema = z.object({
 
 export const notificationTemplateSchema = z.object({
   name: z.string().min(1, "Template name is required"),
+  category: z
+    .enum([
+      "onboarding",
+      "engagement",
+      "content",
+      "booking",
+      "achievement",
+      "admin",
+      "general",
+    ])
+    .default("general"),
   title: z.string().min(1, "Title is required").max(100, "Title too long"),
   body: z.string().min(1, "Body is required").max(500, "Body too long"),
   target_audience: targetAudienceSchema,
   data: z.record(z.string(), z.unknown()).optional(),
+  variables: z.array(z.string()).default([]),
+  is_active: z.boolean().default(true),
 });
 
 // Video schemas

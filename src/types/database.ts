@@ -115,10 +115,13 @@ export interface Database {
         Row: {
           id: string;
           name: string;
+          category: string;
           title: string;
           body: string;
           target_audience: Json;
           data: Json | null;
+          variables: string[];
+          is_active: boolean;
           created_at: string;
           updated_at: string;
           created_by: string | null;
@@ -126,10 +129,13 @@ export interface Database {
         Insert: {
           id?: string;
           name: string;
+          category?: string;
           title: string;
           body: string;
           target_audience?: Json;
           data?: Json | null;
+          variables?: string[];
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
           created_by?: string | null;
@@ -137,13 +143,42 @@ export interface Database {
         Update: {
           id?: string;
           name?: string;
+          category?: string;
           title?: string;
           body?: string;
           target_audience?: Json;
           data?: Json | null;
+          variables?: string[];
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
           created_by?: string | null;
+        };
+      };
+      notification_analytics: {
+        Row: {
+          id: string;
+          notification_id: string;
+          event_type: string;
+          device_count: number;
+          timestamp: string;
+          metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          notification_id: string;
+          event_type: string;
+          device_count?: number;
+          timestamp?: string;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          notification_id?: string;
+          event_type?: string;
+          device_count?: number;
+          timestamp?: string;
+          metadata?: Json | null;
         };
       };
       artists: {
@@ -592,3 +627,35 @@ export type DrumZoneBooking =
   Database["public"]["Tables"]["drum_zone_bookings"]["Row"];
 export type VideoView = Database["public"]["Tables"]["video_views"]["Row"];
 export type PracticeLog = Database["public"]["Tables"]["practice_logs"]["Row"];
+export type NotificationAnalytics =
+  Database["public"]["Tables"]["notification_analytics"]["Row"];
+
+// Additional types for analytics and templates
+export interface NotificationPerformance {
+  id: string;
+  title: string;
+  status: string;
+  target_audience: Json;
+  created_at: string;
+  scheduled_for: string;
+  sent_at: string | null;
+  devices_sent: number;
+  devices_delivered: number;
+  devices_opened: number;
+  devices_clicked: number;
+  devices_failed: number;
+  delivery_rate: number;
+  open_rate: number;
+}
+
+export interface NotificationMetrics {
+  total_notifications: number;
+  sent_notifications: number;
+  pending_notifications: number;
+  failed_notifications: number;
+  total_devices_reached: number;
+  average_delivery_rate: number;
+  average_open_rate: number;
+  notifications_this_week: number;
+  notifications_this_month: number;
+}
