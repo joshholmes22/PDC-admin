@@ -181,6 +181,158 @@ export interface Database {
           metadata?: Json | null;
         };
       };
+      notification_triggers: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          trigger_type:
+            | "user_inactive"
+            | "signup_incomplete"
+            | "video_abandoned"
+            | "practice_streak_broken"
+            | "milestone_reached";
+          condition_config: Json;
+          template_id: string | null;
+          title: string;
+          body: string;
+          target_audience: Json;
+          is_active: boolean;
+          priority: number;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          trigger_type:
+            | "user_inactive"
+            | "signup_incomplete"
+            | "video_abandoned"
+            | "practice_streak_broken"
+            | "milestone_reached";
+          condition_config: Json;
+          template_id?: string | null;
+          title: string;
+          body: string;
+          target_audience?: Json;
+          is_active?: boolean;
+          priority?: number;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          trigger_type?:
+            | "user_inactive"
+            | "signup_incomplete"
+            | "video_abandoned"
+            | "practice_streak_broken"
+            | "milestone_reached";
+          condition_config?: Json;
+          template_id?: string | null;
+          title?: string;
+          body?: string;
+          target_audience?: Json;
+          is_active?: boolean;
+          priority?: number;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+      };
+      trigger_executions: {
+        Row: {
+          id: string;
+          trigger_id: string;
+          user_id: string;
+          executed_at: string;
+          notification_id: string | null;
+          success: boolean;
+          error_message: string | null;
+          condition_values: Json | null;
+        };
+        Insert: {
+          id?: string;
+          trigger_id: string;
+          user_id: string;
+          executed_at?: string;
+          notification_id?: string | null;
+          success?: boolean;
+          error_message?: string | null;
+          condition_values?: Json | null;
+        };
+        Update: {
+          id?: string;
+          trigger_id?: string;
+          user_id?: string;
+          executed_at?: string;
+          notification_id?: string | null;
+          success?: boolean;
+          error_message?: string | null;
+          condition_values?: Json | null;
+        };
+      };
+      user_notification_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          notification_id: string;
+          trigger_id: string | null;
+          sent_at: string;
+          category: string;
+          throttle_key: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          notification_id: string;
+          trigger_id?: string | null;
+          sent_at?: string;
+          category?: string;
+          throttle_key?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          notification_id?: string;
+          trigger_id?: string | null;
+          sent_at?: string;
+          category?: string;
+          throttle_key?: string | null;
+        };
+      };
+      analytics_events: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          event_name: string;
+          event_data: Json | null;
+          timestamp: string;
+          device_info: Json | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          event_name: string;
+          event_data?: Json | null;
+          timestamp?: string;
+          device_info?: Json | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          event_name?: string;
+          event_data?: Json | null;
+          timestamp?: string;
+          device_info?: Json | null;
+        };
+      };
       artists: {
         Row: {
           id: string;
@@ -629,6 +781,14 @@ export type VideoView = Database["public"]["Tables"]["video_views"]["Row"];
 export type PracticeLog = Database["public"]["Tables"]["practice_logs"]["Row"];
 export type NotificationAnalytics =
   Database["public"]["Tables"]["notification_analytics"]["Row"];
+export type NotificationTrigger =
+  Database["public"]["Tables"]["notification_triggers"]["Row"];
+export type TriggerExecution =
+  Database["public"]["Tables"]["trigger_executions"]["Row"];
+export type UserNotificationHistory =
+  Database["public"]["Tables"]["user_notification_history"]["Row"];
+export type AnalyticsEvent =
+  Database["public"]["Tables"]["analytics_events"]["Row"];
 
 // Additional types for analytics and templates
 export interface NotificationPerformance {

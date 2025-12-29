@@ -9,6 +9,7 @@ import {
   Trash2,
   Edit,
   Send,
+  Zap,
 } from "lucide-react";
 import {
   useReactTable,
@@ -200,6 +201,26 @@ export function NotificationsListPage() {
             </Link>
           </Button>
         </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="border-b border-border">
+        <nav className="flex space-x-8">
+          <Link
+            to="/notifications"
+            className="border-b-2 border-primary py-2 px-1 text-sm font-medium text-primary"
+          >
+            <Bell className="inline w-4 h-4 mr-2" />
+            Scheduled Notifications
+          </Link>
+          <Link
+            to="/notifications/triggers"
+            className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors"
+          >
+            <Zap className="inline w-4 h-4 mr-2" />
+            Automated Triggers
+          </Link>
+        </nav>
       </div>
 
       {error && <Alert variant="destructive">{error}</Alert>}

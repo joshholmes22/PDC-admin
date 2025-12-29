@@ -85,7 +85,10 @@ export function VideoFormPage() {
           video_url: video.video_url,
           thumbnail_url: video.thumbnail_url || "",
           duration_seconds: video.duration_seconds ?? undefined,
-          difficulty_level: video.difficulty_level ?? "beginner",
+          difficulty_level:
+            video.difficulty_level === "all"
+              ? "beginner"
+              : video.difficulty_level ?? "beginner",
           is_published: video.is_published,
           is_free: video.is_free,
           series_id: video.series_id || undefined,

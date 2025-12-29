@@ -81,12 +81,18 @@ serve(async (req) => {
     });
 
     if (!pendingNotifications || pendingNotifications.length === 0) {
-      console.log("No pending notifications to process");
+      console.log("No pending notifications found, checking triggers...");
+
+      // If no scheduled notifications, evaluate triggers
+      const triggerResult = await evaluateAndProcessTriggers(supabase, now);
+
       return new Response(
         JSON.stringify({
           success: true,
           processed: 0,
-          message: "No pending notifications",
+          triggers_processed: triggerResult.processed,
+          triggers_executed: triggerResult.executed,
+          message: `No scheduled notifications. Processed ${triggerResult.processed} triggers, executed ${triggerResult.executed}`,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -367,5 +373,235 @@ async function sendPushNotification(
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     };
+  }
+}
+
+// Function to evaluate triggers and process them
+async function evaluateAndProcessTriggers(supabase: any, currentTime: string) {
+  console.log("Evaluating triggers...");
+
+  try {
+    // Fetch all active triggers
+    const { data: triggers, error: triggerError } = await supabase
+      .from("notification_triggers")
+      .select("*")
+      .eq("is_active", true);
+
+    if (triggerError) {
+      console.error("Error fetching triggers:", triggerError);
+      return { processed: 0, executed: 0, error: triggerError.message };
+    }
+
+    if (!triggers || triggers.length === 0) {
+      console.log("No active triggers found");
+      return { processed: 0, executed: 0 };
+    }
+
+    console.log(`Found ${triggers.length} active triggers`);
+
+    let totalExecuted = 0;
+
+    // Process each trigger
+    for (const trigger of triggers) {
+      try {
+        console.log(
+          `Processing trigger: ${trigger.name} (${trigger.trigger_type})`
+        );
+
+        const executionResult = await evaluateTriggerConditions(
+          supabase,
+          trigger,
+          currentTime
+        );
+
+        if (executionResult.matchingUsers > 0) {
+          console.log(
+            `Trigger ${trigger.name} matched ${executionResult.matchingUsers} users`
+          );
+          totalExecuted += executionResult.matchingUsers;
+        }
+      } catch (error) {
+        console.error(`Error processing trigger ${trigger.name}:`, error);
+      }
+    }
+
+    return {
+      processed: triggers.length,
+      executed: totalExecuted,
+    };
+  } catch (error) {
+    console.error("Error in evaluateAndProcessTriggers:", error);
+    return { processed: 0, executed: 0, error: error.message };
+  }
+}
+
+// Function to evaluate specific trigger conditions
+async function evaluateTriggerConditions(
+  supabase: any,
+  trigger: any,
+  currentTime: string
+) {
+  const conditionConfig =
+    typeof trigger.condition_config === "string"
+      ? JSON.parse(trigger.condition_config)
+      : trigger.condition_config;
+
+  console.log(
+    `Evaluating ${trigger.trigger_type} trigger with config:`,
+    conditionConfig
+  );
+
+  let matchingUsers: any[] = [];
+
+  switch (trigger.trigger_type) {
+    case "user_inactive":
+      matchingUsers = await evaluateUserInactive(
+        supabase,
+        conditionConfig,
+        currentTime
+      );
+      break;
+
+    case "signup_incomplete":
+      matchingUsers = await evaluateSignupIncomplete(
+        supabase,
+        conditionConfig,
+        currentTime
+      );
+      break;
+
+    case "video_abandoned":
+      matchingUsers = await evaluateVideoAbandoned(
+        supabase,
+        conditionConfig,
+        currentTime
+      );
+      break;
+
+    default:
+      console.log(`Trigger type ${trigger.trigger_type} not yet implemented`);
+      return { matchingUsers: 0 };
+  }
+
+  // Create trigger executions and send notifications
+  for (const user of matchingUsers) {
+    await createTriggerExecution(supabase, trigger.id, user, true);
+    // TODO: Create scheduled notification for this user
+  }
+
+  return { matchingUsers: matchingUsers.length };
+}
+
+// User inactive trigger evaluation
+async function evaluateUserInactive(
+  supabase: any,
+  config: any,
+  currentTime: string
+) {
+  const daysAgo = new Date();
+  daysAgo.setDate(daysAgo.getDate() - (config.days_inactive || 3));
+
+  console.log(`Checking for users inactive since: ${daysAgo.toISOString()}`);
+
+  const { data: inactiveUsers } = await supabase
+    .from("AppUser")
+    .select("authUserID, firstName, pushToken, notificationsEnabled")
+    .lt("createdAt", daysAgo.toISOString());
+
+  // Filter users with push tokens and notifications enabled
+  return (inactiveUsers || []).filter(
+    (user: any) => user.pushToken && user.notificationsEnabled
+  );
+}
+
+// Signup incomplete trigger evaluation
+async function evaluateSignupIncomplete(
+  supabase: any,
+  config: any,
+  currentTime: string
+) {
+  const hoursAgo = new Date();
+  hoursAgo.setHours(hoursAgo.getHours() - (config.hours_since_signup || 24));
+
+  console.log(
+    `Checking for incomplete signups since: ${hoursAgo.toISOString()}`
+  );
+
+  const { data: incompleteUsers } = await supabase
+    .from("AppUser")
+    .select("authUserID, firstName, lastName, pushToken, notificationsEnabled")
+    .gt("createdAt", hoursAgo.toISOString())
+    .or("firstName.is.null,lastName.is.null");
+
+  return (incompleteUsers || []).filter(
+    (user: any) => user.pushToken && user.notificationsEnabled
+  );
+}
+
+// Video abandoned trigger evaluation
+async function evaluateVideoAbandoned(
+  supabase: any,
+  config: any,
+  currentTime: string
+) {
+  const hoursAgo = new Date();
+  hoursAgo.setHours(
+    hoursAgo.getHours() - (config.hours_since_abandonment || 2)
+  );
+
+  console.log(`Checking for abandoned videos since: ${hoursAgo.toISOString()}`);
+
+  const watchThreshold = config.watch_percentage_threshold || 50;
+
+  const { data: abandonedViews } = await supabase
+    .from("VideoProgress")
+    .select(
+      `
+      "userID",
+      "videoID", 
+      progress,
+      "updatedAt",
+      Video!inner(duration, title)
+    `
+    )
+    .lt("updatedAt", hoursAgo.toISOString());
+
+  // Filter for abandoned videos (watched some but not completed)
+  const abandonedUsers = (abandonedViews || []).filter((view: any) => {
+    const watchPercentage = (view.progress / view.Video.duration) * 100;
+    return watchPercentage >= 10 && watchPercentage <= watchThreshold;
+  });
+
+  // Get user details for push tokens
+  const userIDs = [...new Set(abandonedUsers.map((view: any) => view.userID))];
+
+  if (userIDs.length === 0) return [];
+
+  const { data: users } = await supabase
+    .from("AppUser")
+    .select("authUserID, pushToken, notificationsEnabled")
+    .in("authUserID", userIDs);
+
+  return (users || []).filter(
+    (user: any) => user.pushToken && user.notificationsEnabled
+  );
+}
+
+// Create trigger execution record
+async function createTriggerExecution(
+  supabase: any,
+  triggerId: string,
+  user: any,
+  success: boolean
+) {
+  const { error } = await supabase.from("trigger_executions").insert({
+    trigger_id: triggerId,
+    user_id: user.authUserID,
+    notification_sent: success,
+    condition_met_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error("Error creating trigger execution:", error);
   }
 }

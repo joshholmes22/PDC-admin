@@ -48,8 +48,111 @@ export const difficultyLevelSchema = z.enum([
   "beginner",
   "intermediate",
   "advanced",
-  "all",
 ]);
+
+// Notification trigger schemas
+export const triggerConditionSchema = z.discriminatedUnion("type", [
+  // User inactivity trigger
+  z.object({
+    type: z.literal("user_inactive"),
+    days_inactive: z.number().min(1).max(365),
+    exclude_new_users: z.boolean().default(true),
+    min_activity_threshold: z.number().min(1).default(1),
+  }),
+  // Signup incomplete trigger
+  z.object({
+    type: z.literal("signup_incomplete"),
+    hours_since_signup: z.number().min(1).max(168), // Max 1 week
+    require_push_token: z.boolean().default(true),
+    exclude_completed: z.boolean().default(true),
+  }),
+  // Video abandoned trigger
+  z.object({
+    type: z.literal("video_abandoned"),
+    watch_percentage_threshold: z.number().min(10).max(90).default(25),
+    hours_since_abandonment: z.number().min(1).max(72),
+    video_id: z.string().uuid().optional(),
+    series_id: z.string().uuid().optional(),
+  }),
+  // Practice streak broken trigger
+  z.object({
+    type: z.literal("practice_streak_broken"),
+    min_streak_length: z.number().min(2).default(3),
+    days_since_break: z.number().min(1).max(14).default(2),
+  }),
+  // Milestone reached trigger
+  z.object({
+    type: z.literal("milestone_reached"),
+    milestone_type: z.enum([
+      "video_completed",
+      "practice_hours",
+      "streak_achieved",
+    ]),
+    threshold_value: z.number().min(1),
+    celebration_window_hours: z.number().min(1).max(48).default(24),
+  }),
+]);
+
+export const notificationTriggerSchema = z.object({
+  name: z.string().min(1, "Trigger name is required"),
+  description: z.string().optional(),
+  trigger_type: z.enum([
+    "user_inactive",
+    "signup_incomplete",
+    "video_abandoned",
+    "practice_streak_broken",
+    "milestone_reached",
+  ]),
+  condition_config: triggerConditionSchema,
+  template_id: z.string().uuid().optional(),
+  title: z.string().min(1, "Title is required").max(100, "Title too long"),
+  body: z.string().min(1, "Body is required").max(500, "Body too long"),
+  target_audience: targetAudienceSchema,
+  is_active: z.boolean().default(true),
+  priority: z.number().min(1).max(10).default(5),
+});
+
+// Simplified form schema without discriminated unions for React Hook Form
+export const triggerFormSchema = z.object({
+  name: z.string().min(1, "Trigger name is required"),
+  description: z.string().optional(),
+  trigger_type: z.enum([
+    "user_inactive",
+    "signup_incomplete",
+    "video_abandoned",
+    "practice_streak_broken",
+    "milestone_reached",
+  ]),
+  title: z.string().min(1, "Title is required").max(100, "Title too long"),
+  body: z.string().min(1, "Body is required").max(500, "Body too long"),
+  is_active: z.boolean(),
+  priority: z.number().min(1).max(10),
+  // All possible condition fields (optional)
+  days_inactive: z.number().optional(),
+  exclude_new_users: z.boolean().optional(),
+  min_activity_threshold: z.number().optional(),
+  hours_since_signup: z.number().optional(),
+  require_push_token: z.boolean().optional(),
+  exclude_completed: z.boolean().optional(),
+  watch_percentage_threshold: z.number().optional(),
+  min_watch_time_seconds: z.number().optional(),
+  days_since_break: z.number().optional(),
+  min_streak_length: z.number().optional(),
+  milestone_type: z
+    .enum(["video_completed", "practice_hours", "streak_achieved"])
+    .optional(),
+  threshold_value: z.number().optional(),
+  celebration_window_hours: z.number().optional(),
+});
+
+// Throttle settings schema
+export const throttleSettingsSchema = z.object({
+  enabled: z.boolean(),
+  max_notifications_per_day: z.number().min(1).max(20),
+  cooldown_hours_between_campaigns: z.number().min(1).max(168),
+  priority_override_threshold: z.number().min(1).max(10),
+  respect_user_preferences: z.boolean(),
+});
 
 export const videoSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -169,6 +272,13 @@ export type ScheduledNotificationInput = z.infer<
 export type NotificationTemplateInput = z.infer<
   typeof notificationTemplateSchema
 >;
+export type NotificationTriggerInput = z.infer<
+  typeof notificationTriggerSchema
+>;
+export type TriggerFormValues = z.infer<typeof triggerFormSchema>;
+export type TriggerCondition = z.infer<typeof triggerConditionSchema>;
+export type ThrottleSettings = z.infer<typeof throttleSettingsSchema>;
+export type ThrottleSettingsType = z.infer<typeof throttleSettingsSchema>;
 export type VideoInput = z.infer<typeof videoSchema>;
 export type VideoSeriesInput = z.infer<typeof videoSeriesSchema>;
 export type ArtistInput = z.infer<typeof artistSchema>;

@@ -31,7 +31,7 @@ export const useUsersStore = create<UsersState>((set, get) => ({
 
   fetchUsers: async (options = {}) => {
     set({ isLoading: true, error: null });
-    const { search, limit = 50, offset = 0 } = options;
+    const { search, limit = 500, offset = 0 } = options;
 
     try {
       let query = supabase

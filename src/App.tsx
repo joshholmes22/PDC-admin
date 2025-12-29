@@ -21,6 +21,7 @@ import {
   SiteFormPage,
   RoomFormPage,
 } from "@/pages";
+import { AutomatedTriggersPage } from "@/pages/notifications";
 
 function App() {
   const { initialize, isLoading } = useAuthStore();
@@ -66,6 +67,10 @@ function App() {
           <Route
             path="notifications/:id/edit"
             element={<NotificationFormPage />}
+          />
+          <Route
+            path="notifications/triggers"
+            element={<AutomatedTriggersPage />}
           />
 
           {/* Content */}
