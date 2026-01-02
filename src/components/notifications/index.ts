@@ -1,1 +1,1 @@
-export { NotificationTemplates } from "./NotificationTemplates";
+// No notification components currently exported

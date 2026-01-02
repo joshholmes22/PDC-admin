@@ -8,7 +8,6 @@ import {
   BarChart3,
   Target,
   Calendar,
-  Settings,
   LogOut,
   Drum,
 } from "lucide-react";
@@ -76,17 +75,15 @@ export function Sidebar() {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="flex-1" asChild>
-            <NavLink to="/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </NavLink>
-          </Button>
-          <Button variant="ghost" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start"
+          onClick={signOut}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
+        </Button>
       </div>
     </aside>
   );

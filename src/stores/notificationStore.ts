@@ -209,9 +209,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         ],
       });
 
-      // Process the notification immediately
+      // Process the notification immediately by passing its ID
       const { error: functionError } = await supabase.functions.invoke(
-        "process-notifications"
+        "process-notifications",
+        {
+          body: { notification_id: notification.id },
+        }
       );
 
       if (functionError) {
